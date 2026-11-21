@@ -1,0 +1,15 @@
+/* Fontes locais (SIL Open Font License), para a vitrine abrir sem internet. */
+@font-face {
+  font-family: "Reddit Sans";
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url("reddit-sans.woff2") format("woff2");
+}
+@font-face {
+  font-family: "JetBrains Mono";
+  font-style: normal;
+  font-weight: 400 500;
+  font-display: swap;
+  src: url("jetbrains-mono.woff2") format("woff2");
+}

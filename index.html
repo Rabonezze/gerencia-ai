@@ -1,0 +1,400 @@
+<!doctype html>
+<html lang="pt-BR" data-type="software" data-radius="soft" data-buttons="pill" data-motion>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Gerencia AI: gestão do supermercado pelo WhatsApp</title>
+<meta name="description" content="Pergunte pelo WhatsApp quanto vendeu, o que está acabando ou o que dá mais lucro. A Gerencia AI responde com os números reais da loja e nunca altera nada.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Gerencia AI: gestão do supermercado pelo WhatsApp">
+<meta property="og:description" content="Respostas precisas com os números da sua loja, direto no WhatsApp. Somente leitura.">
+<meta property="og:image" content="share.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<meta name="theme-color" content="#f7f9fa">
+<meta name="site-kind" content="software">
+<meta name="page-type" content="software">
+<link rel="stylesheet" href="fonts/fonts.css">
+<link rel="stylesheet" href="assets/system.css">
+<link rel="stylesheet" href="assets/motion/motion.css">
+<link rel="stylesheet" href="assets/layout/layout.css">
+<style>
+:root {
+  --p-bg: #f7f9fa; --p-surface: #ecf0f2; --p-ink: #1f3038; --p-muted: #5d6b72;
+  --p-accent: #0d7480; --p-accent-ink: #ffffff; --p-action: #0d7480; --p-action-ink: #ffffff;
+  --p-inv-bg: #1f3038; --p-inv-surface: #2c3c44; --p-inv-ink: #f7f9fa; --p-inv-muted: #9ea7ab;
+  --p-inv-accent: #f7f9fa; --p-inv-accent-ink: #1f3038; --p-inv-action: #f7f9fa; --p-inv-action-ink: #1f3038;
+  --font-display: "Reddit Sans", system-ui, sans-serif;
+  --font-text: "Reddit Sans", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  --display-weight: 500;
+  --display-tracking: -0.03em;
+  --display-tracking-xl: -0.04em;
+}
+</style>
+<link rel="stylesheet" href="css/vitrine.css">
+<link rel="stylesheet" href="css/filme.css">
+<script>document.documentElement.classList.add('m-enter');setTimeout(()=>document.documentElement.classList.add('m-enter-done'),700)</script>
+</head>
+<body>
+<!-- Gerencia AI: vitrine comercial.
+     Donos dos arquivos: Claude (index.html, css/vitrine.css, js/dados-demo.js);
+     Antigravity (css/filme.css, js/filme.js, js/demo.js e o miolo marcado FILME e RECUSA abaixo). -->
+
+<header class="nav">
+  <div class="wrap nav__bar">
+    <a class="skip-link" href="#top">Pular para o conteúdo</a>
+    <a class="nav__logo marca" href="#top" aria-label="Gerencia AI, início"><span class="mark" data-mark="stack" aria-hidden="true"></span><span class="marca__nome">Gerencia<span class="marca__ai">AI</span></span></a>
+    <nav class="nav__links" aria-label="Principal">
+      <div class="nav__item"><a class="nav__link" href="#filme">Como funciona</a></div>
+      <div class="nav__item"><a class="nav__link" href="#demo">Demonstração</a></div>
+      <div class="nav__item"><a class="nav__link" href="#seguranca">Segurança</a></div>
+      <div class="nav__item"><a class="nav__link" href="#perguntas">Perguntas</a></div>
+      <div class="nav__item"><a class="nav__link" href="#faq">Dúvidas</a></div>
+    </nav>
+    <div class="nav__actions">
+      <a class="btn btn--primary" href="#contato">Pedir um orçamento</a>
+    </div>
+    <button class="nav__toggle" type="button" aria-expanded="false" aria-label="Menu">
+      <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><path d="M2 5h14M2 13h14" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+    </button>
+  </div>
+</header>
+
+<main id="top">
+
+  <!-- ABERTURA: título, subtítulo e, logo abaixo, o filme do celular -->
+  <section class="abertura" data-enter aria-labelledby="hero-h">
+    <div class="abertura__fundo" aria-hidden="true"></div>
+    <div class="wrap abertura__texto">
+      <p class="selo"><span class="selo__ponto" aria-hidden="true"></span>Somente leitura: seus dados nunca são alterados</p>
+      <h1 id="hero-h">Gestão do seu mercado pelo WhatsApp</h1>
+      <p class="abertura__lead">Respostas precisas, com os números reais da sua loja, numa conversa. A Gerencia AI consulta o sistema com acesso somente de leitura e nunca apaga ou altera nada.</p>
+      <div class="btn-row"><a class="btn btn--primary" href="#contato">Pedir um orçamento<svg class="m-arrow" viewBox="0 0 12 12" aria-hidden="true"><path class="m-arrow__stem" d="M1 6h8"/><path class="m-arrow__head" d="M4.5 2.5 8 6l-3.5 3.5"/></svg></a><a class="btn btn--secondary" href="#demo">Testar a demonstração</a></div>
+    </div>
+
+    <!-- FILME:INICIO (o Antigravity anima este bloco com js/filme.js e css/filme.css; sem script ele mostra a cena final parada) -->
+    <div class="wrap">
+      <div class="filme" id="filme" role="img" aria-label="Filme: o dono do mercado abre o WhatsApp, pergunta o que precisa repor e a Gerencia AI responde com 5 produtos abaixo do estoque mínimo, usando acesso somente de leitura">
+        <div class="filme__palco" aria-hidden="true">
+          <p class="filme__frase" data-cena="frase">O que eu preciso repor esta semana?</p>
+          <div class="celular">
+            <div class="celular__tela">
+              <div class="celular__status"><span>07:41</span><span class="celular__ilha"></span><span>5G</span></div>
+              <div class="celular__home" data-cena="home">
+                <span class="app"></span><span class="app"></span><span class="app"></span><span class="app"></span>
+                <span class="app"></span><span class="app app--whats"><img src="assets/icons/whatsapp.svg" alt=""></span><span class="app"></span><span class="app"></span>
+              </div>
+              <div class="celular__chat" data-cena="chat">
+                <div class="celular__topo"><span class="wa-av">G</span><span><b>Gerencia AI</b><small>online</small></span></div>
+                <div class="celular__msgs">
+                  <div class="wa-msg wa-msg--me" data-cena="pergunta">O que eu preciso repor esta semana?<small>07:41</small></div>
+                  <div class="wa-msg wa-msg--bot" data-cena="resposta"><b>5 produtos</b> estão abaixo do mínimo:<br>• Café 500g: 6 de 15 un<br>• Linguiça Toscana: 4,2 de 10 kg<br>• Feijão Carioca 1kg: 10 de 20 un<br>• Cerveja Pilsen lata: 18 de 36 un<br>• Bolo de Cenoura: 3 de 6 un<small>07:41</small></div>
+                </div>
+                <div class="celular__digitar"><span data-cena="digitando">Mensagem</span></div>
+              </div>
+            </div>
+          </div>
+          <div class="filme__card filme__card--esq" data-cena="consulta"><span class="icone-escudo"></span><span><b>Consulta conferida</b><small>Somente leitura · nada foi alterado</small></span></div>
+          <div class="filme__card filme__card--dir" data-cena="numeros"><span class="icone-check"></span><span><b>Números do sistema da loja</b><small>Estoque atual × estoque mínimo</small></span></div>
+        </div>
+        <button class="filme__repetir" type="button" hidden>Ver de novo</button>
+      </div>
+    </div>
+    <!-- FILME:FIM -->
+  </section>
+
+  <!-- O PROBLEMA: hoje × com a Gerencia AI -->
+  <section class="secao" id="problema" aria-labelledby="problema-h">
+    <div class="wrap">
+      <div class="secao__cabeca">
+        <p class="rotulo">O problema</p>
+        <h2 id="problema-h">O número que você precisa está preso no escritório</h2>
+        <p class="secao__lead">Para saber o que vendeu ou o que está acabando, hoje você para tudo e vai até o computador. Com a Gerencia AI, a resposta vem no celular, onde você estiver.</p>
+      </div>
+      <div class="comparar">
+        <article class="comparar__lado comparar__lado--hoje">
+          <h3>Hoje</h3>
+          <ol class="caminho">
+            <li>Ir até o computador do escritório</li>
+            <li>Abrir o sistema e achar o relatório</li>
+            <li>Exportar para a planilha</li>
+            <li>Fazer a conta na mão</li>
+          </ol>
+          <div class="planilha" aria-hidden="true">
+            <div class="planilha__barra"><i></i><i></i><i></i><span>relatorio_vendas_novembro.xlsx</span></div>
+            <div class="planilha__grade">
+              <span class="h">Produto</span><span class="h">Qtd</span><span class="h">Total</span><span class="h">?</span>
+              <span>Arroz 5kg</span><span>50</span><span>1.345,00</span><span class="x">#REF!</span>
+              <span>Café 500g</span><span>51</span><span>1.014,90</span><span></span>
+              <span>Patinho</span><span>19,2</span><span>802,98</span><span class="x">???</span>
+              <span>Sabão 1,6kg</span><span>41</span><span>799,09</span><span></span>
+              <span>Suco 1L</span><span>54</span><span>642,60</span><span></span>
+            </div>
+          </div>
+        </article>
+        <article class="comparar__lado comparar__lado--gerencia">
+          <h3>Com a <span class="marca__nome">Gerencia<span class="marca__ai">AI</span></span></h3>
+          <ol class="caminho caminho--curto">
+            <li>Mandar uma mensagem no WhatsApp</li>
+          </ol>
+          <div class="mini-chat" aria-hidden="true">
+            <div class="wa-msg wa-msg--me">Qual produto deu mais lucro no mês?<small>18:02</small></div>
+            <div class="wa-msg wa-msg--bot">O produto que gerou maior lucro foi o <b>Arroz Tipo 1 5kg</b>, totalizando <b>R$ 420,00</b>.<small>18:02</small></div>
+          </div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- DEMONSTRAÇÃO: a conversa e, ao lado, o que aconteceu por trás da resposta -->
+  <section class="secao secao--clara" id="demo" aria-labelledby="demo-h">
+    <div class="wrap">
+      <div class="secao__cabeca secao__cabeca--split">
+        <div>
+          <p class="rotulo">Demonstração</p>
+          <h2 id="demo-h">Veja de onde vem cada número</h2>
+        </div>
+        <p class="secao__lead">Escolha uma pergunta. A resposta chega na conversa e, ao lado, você vê a consulta conferida e os dados exatos que a Gerencia AI usou. Nada é inventado.</p>
+      </div>
+      <div class="demo-bar">
+        <div class="tabs" role="tablist" aria-label="Perguntas de exemplo">
+          <button class="tab" type="button" role="tab" id="tab-estoque" data-cena="estoque" aria-controls="painel-estoque" aria-selected="true">Estoque baixo</button>
+          <button class="tab" type="button" role="tab" id="tab-faturamento" data-cena="faturamento" aria-controls="painel-faturamento" aria-selected="false">Faturamento</button>
+          <button class="tab" type="button" role="tab" id="tab-vendidos" data-cena="vendidos" aria-controls="painel-vendidos" aria-selected="false">Mais vendidos</button>
+          <button class="tab" type="button" role="tab" id="tab-pagamentos" data-cena="pagamentos" aria-controls="painel-pagamentos" aria-selected="false">Pagamentos</button>
+        </div>
+        <button class="demo-switch" type="button" role="switch" aria-checked="false" id="modo-ao-vivo"><span class="demo-switch__knob" aria-hidden="true"></span>Modo ao vivo</button>
+      </div>
+
+      <div class="ui ui-app app">
+        <div class="app__pane app__pane--list wa" aria-label="Conversa com a Gerencia AI no WhatsApp">
+          <div class="wa__head"><span class="wa-av">G</span><span class="wa__who"><b>Gerencia AI</b><span>online</span></span><img class="wa__logo" src="assets/icons/whatsapp.svg" alt="WhatsApp" width="24" height="24"></div>
+          <div class="wa__body" id="wa-body" aria-live="polite">
+            <div class="wa__day">Hoje</div>
+            <div class="wa-msg wa-msg--me">O que está com estoque baixo?<small>07:41</small></div>
+            <div class="wa-msg wa-msg--bot">5 produtos estão abaixo do mínimo:<br>• <b>Café Torrado e Moído 500g</b>: 6 un (mínimo 15)<br>• <b>Linguiça Toscana Frescal</b>: 4,2 kg (mínimo 10)<br>• <b>Feijão Carioca 1kg</b>: 10 un (mínimo 20)<br>• <b>Cerveja Pilsen Lata 350ml</b>: 18 un (mínimo 36)<br>• <b>Bolo de Cenoura com Cobertura</b>: 3 un (mínimo 6)<small>07:41</small></div>
+          </div>
+          <form class="wa__input" id="wa-form" autocomplete="off" hidden>
+            <label class="wa__label" for="wa-pergunta">Sua pergunta para a API local</label>
+            <input id="wa-pergunta" name="pergunta" type="text">
+            <button class="wa__send" type="submit" aria-label="Enviar pergunta"><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M2.5 8h10M8.5 3.5 13 8l-4.5 4.5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+          </form>
+        </div>
+
+        <div class="app__pane app__pane--open tras">
+          <div class="tras__head"><b>Por trás da resposta</b><span class="tag-leitura">Somente leitura</span></div>
+
+          <div class="tras__cena" role="tabpanel" id="painel-estoque" aria-labelledby="tab-estoque">
+            <ol class="etapas">
+              <li><b>Pergunta entendida</b><span>Produtos com estoque abaixo do mínimo cadastrado.</span></li>
+              <li><b>Consulta conferida</b><span>Uma leitura da tabela de produtos, nenhuma alteração.</span><code>SELECT nome, estoque_atual, estoque_minimo FROM produtos WHERE estoque_atual &lt; estoque_minimo</code></li>
+              <li><b>Dados usados</b>
+                <table class="dados"><thead><tr><th>Produto</th><th>Atual</th><th>Mínimo</th></tr></thead><tbody>
+                  <tr><td>Café Torrado e Moído 500g</td><td>6 un</td><td>15 un</td></tr>
+                  <tr><td>Linguiça Toscana Frescal</td><td>4,2 kg</td><td>10 kg</td></tr>
+                  <tr><td>Feijão Carioca 1kg</td><td>10 un</td><td>20 un</td></tr>
+                  <tr><td>Cerveja Pilsen Lata 350ml</td><td>18 un</td><td>36 un</td></tr>
+                  <tr><td>Bolo de Cenoura com Cobertura</td><td>3 un</td><td>6 un</td></tr>
+                </tbody></table>
+              </li>
+            </ol>
+          </div>
+
+          <div class="tras__cena" role="tabpanel" id="painel-faturamento" aria-labelledby="tab-faturamento" hidden>
+            <ol class="etapas">
+              <li><b>Pergunta entendida</b><span>Soma das vendas dos últimos 30 dias.</span></li>
+              <li><b>Consulta conferida</b><span>Uma leitura da tabela de vendas, nenhuma alteração.</span><code>SELECT COUNT(*), SUM(valor_total) FROM vendas WHERE data_hora &gt;= date('now', '-30 days')</code></li>
+              <li><b>Dados usados</b>
+                <table class="dados"><thead><tr><th>Vendas</th><th>Faturamento</th><th>Lucro bruto</th></tr></thead><tbody>
+                  <tr><td>80</td><td>R$ 9.599,98</td><td>R$ 3.669,78</td></tr>
+                </tbody></table>
+              </li>
+            </ol>
+          </div>
+
+          <div class="tras__cena" role="tabpanel" id="painel-vendidos" aria-labelledby="tab-vendidos" hidden>
+            <ol class="etapas">
+              <li><b>Pergunta entendida</b><span>Produtos que mais faturaram nos últimos 30 dias.</span></li>
+              <li><b>Consulta conferida</b><span>Uma leitura de produtos e itens vendidos, nenhuma alteração.</span><code>SELECT p.nome, SUM(iv.subtotal) FROM itens_venda iv JOIN produtos p ON p.id = iv.produto_id GROUP BY p.nome ORDER BY 2 DESC</code></li>
+              <li><b>Dados usados</b>
+                <table class="dados"><thead><tr><th>Produto</th><th>Faturamento</th></tr></thead><tbody>
+                  <tr><td>Arroz Tipo 1 5kg</td><td>R$ 1.345,00</td></tr>
+                  <tr><td>Café Torrado e Moído 500g</td><td>R$ 1.014,90</td></tr>
+                  <tr><td>Patinho Bovino Resfriado</td><td>R$ 802,98</td></tr>
+                  <tr><td>Sabão em Pó 1,6kg</td><td>R$ 799,09</td></tr>
+                  <tr><td>Suco de Laranja Integral 1L</td><td>R$ 642,60</td></tr>
+                </tbody></table>
+              </li>
+            </ol>
+          </div>
+
+          <div class="tras__cena" role="tabpanel" id="painel-pagamentos" aria-labelledby="tab-pagamentos" hidden>
+            <ol class="etapas">
+              <li><b>Pergunta entendida</b><span>Faturamento agrupado por forma de pagamento.</span></li>
+              <li><b>Consulta conferida</b><span>Uma leitura da tabela de vendas, nenhuma alteração.</span><code>SELECT forma_pagamento, SUM(valor_total) FROM vendas GROUP BY forma_pagamento ORDER BY 2 DESC</code></li>
+              <li><b>Dados usados</b>
+                <table class="dados"><thead><tr><th>Pagamento</th><th>Faturamento</th></tr></thead><tbody>
+                  <tr><td>PIX</td><td>R$ 2.911,45</td></tr>
+                  <tr><td>Dinheiro</td><td>R$ 2.050,02</td></tr>
+                  <tr><td>Vale Alimentação</td><td>R$ 1.910,51</td></tr>
+                  <tr><td>Cartão de Crédito</td><td>R$ 1.553,40</td></tr>
+                  <tr><td>Cartão de Débito</td><td>R$ 1.174,60</td></tr>
+                </tbody></table>
+              </li>
+            </ol>
+          </div>
+
+          <!-- modo ao vivo: js/demo.js escreve aqui a consulta (campo "sql") e a tabela (campo "dados") da API -->
+          <div class="tras__cena" id="painel-ao-vivo" hidden>
+            <ol class="etapas">
+              <li><b>Consulta conferida</b><span>Gerada pela IA e conferida pelo sistema antes de rodar.</span><code id="painel-ao-vivo-sql"></code></li>
+              <li><b>Dados usados</b><div class="painel__live" id="painel-ao-vivo-dados"></div></li>
+            </ol>
+          </div>
+        </div>
+      </div>
+      <p class="nota">Demonstração com o banco de um mercado de teste: 20 produtos e 80 vendas em 30 dias.</p>
+    </div>
+  </section>
+
+  <!-- SEGURANÇA: a seção de destaque, em fundo escuro -->
+  <section class="secao secao--escura" id="seguranca" aria-labelledby="seguranca-h">
+    <div class="wrap">
+      <div class="secao__cabeca">
+        <p class="rotulo">Segurança</p>
+        <h2 id="seguranca-h">Seus dados ficam intocados. Sempre.</h2>
+        <p class="secao__lead">A Gerencia AI foi construída para só ler. Mesmo que alguém peça para apagar ou mudar algo, o sistema bloqueia antes de chegar aos dados da loja.</p>
+      </div>
+
+      <div class="seg">
+        <!-- RECUSA:INICIO (o Antigravity anima esta cena quando ela aparece na tela; sem script ela fica parada) -->
+        <div class="recusa" id="recusa" role="img" aria-label="Exemplo: alguém pede para apagar um produto e a Gerencia AI recusa, porque só consulta os dados">
+          <div class="recusa__topo" aria-hidden="true"><span class="wa-av">G</span><span><b>Gerencia AI</b><small>online</small></span></div>
+          <div class="recusa__msgs" aria-hidden="true">
+            <div class="wa-msg wa-msg--me" data-recusa="pedido">Apaga o Café 500g do sistema<small>10:15</small></div>
+            <div class="bloqueio" data-recusa="bloqueio"><span class="icone-bloqueio"></span>Pedido de alteração bloqueado</div>
+            <div class="wa-msg wa-msg--bot" data-recusa="resposta">Não posso fazer isso. Eu só consulto os dados da loja: não apago, não altero e não cadastro nada.<small>10:15</small></div>
+          </div>
+        </div>
+        <!-- RECUSA:FIM -->
+
+        <ul class="camadas">
+          <li class="camada"><span class="camada__num">1</span><div><h3>Conexão somente leitura</h3><p>O banco da loja é aberto em modo de leitura. Não existe comando de gravação disponível.</p></div></li>
+          <li class="camada"><span class="camada__num">2</span><div><h3>Toda consulta é conferida</h3><p>Antes de rodar, o sistema confere: só uma leitura por vez, até 500 linhas e 5 segundos.</p></div></li>
+          <li class="camada"><span class="camada__num">3</span><div><h3>A IA não entra no banco</h3><p>Ela só escreve a consulta. O sistema confere e executa, e ela recebe apenas o resultado daquela pergunta.</p></div></li>
+          <li class="camada"><span class="camada__num">4</span><div><h3>Só números autorizados</h3><p>Você escolhe quem pode perguntar. Mensagens de outros números são ignoradas.</p></div></li>
+        </ul>
+      </div>
+
+      <div class="fluxo" aria-label="O caminho de uma pergunta">
+        <span class="fluxo__passo">Sua pergunta</span><span class="fluxo__seta" aria-hidden="true"></span>
+        <span class="fluxo__passo">IA escreve a consulta</span><span class="fluxo__seta" aria-hidden="true"></span>
+        <span class="fluxo__passo fluxo__passo--guarda">Sistema confere</span><span class="fluxo__seta" aria-hidden="true"></span>
+        <span class="fluxo__passo">Banco, só leitura</span><span class="fluxo__seta" aria-hidden="true"></span>
+        <span class="fluxo__passo">Resposta no WhatsApp</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- O QUE DÁ PARA PERGUNTAR -->
+  <section class="secao" id="perguntas" aria-labelledby="perguntas-h">
+    <div class="wrap">
+      <div class="secao__cabeca">
+        <p class="rotulo">Perguntas</p>
+        <h2 id="perguntas-h">O que dá para perguntar à Gerencia AI</h2>
+        <p class="secao__lead">Escreva do seu jeito, como falaria com o gerente. Alguns exemplos que ela já responde com os dados do sistema:</p>
+      </div>
+      <div class="temas">
+        <article class="tema"><h3>Vendas</h3><ul><li>Quanto vendi ontem?</li><li>Qual foi o melhor dia do mês?</li><li>Quanto é o ticket médio?</li></ul></article>
+        <article class="tema"><h3>Estoque</h3><ul><li>O que está abaixo do mínimo?</li><li>O que preciso repor esta semana?</li><li>Quanto tenho de café em estoque?</li></ul></article>
+        <article class="tema"><h3>Lucro</h3><ul><li>Qual produto dá mais lucro?</li><li>Qual categoria lucra mais?</li><li>Qual foi o lucro do mês?</li></ul></article>
+        <article class="tema"><h3>Pagamentos</h3><ul><li>Como os clientes estão pagando?</li><li>Quanto entrou no PIX esta semana?</li><li>Quanto foi no vale alimentação?</li></ul></article>
+        <article class="tema"><h3>Produtos</h3><ul><li>Quais os 5 mais vendidos?</li><li>O que vende menos no açougue?</li><li>Quanto vendi de bebidas?</li></ul></article>
+        <article class="tema"><h3>Horários</h3><ul><li>Qual horário vende mais?</li><li>Que dia da semana é mais fraco?</li><li>Quantas vendas teve no sábado?</li></ul></article>
+      </div>
+    </div>
+  </section>
+
+  <!-- DÚVIDAS -->
+  <section class="secao secao--clara" id="faq" aria-labelledby="faq-h">
+    <div class="wrap faq-grade">
+      <div class="secao__cabeca">
+        <p class="rotulo">Dúvidas</p>
+        <h2 id="faq-h">Perguntas de quem tem mercado</h2>
+        <p class="icon-line"><img src="assets/icons/whatsapp.svg" alt="" width="32" height="32">Funciona no WhatsApp do seu celular, sem aplicativo novo.</p>
+      </div>
+      <div class="faq">
+        <div class="faq__item"><h3>Preciso trocar o sistema do mercado?</h3><p>Não. A Gerencia AI lê os dados do sistema que você já usa. A ligação com ele é combinada na instalação.</p></div>
+        <div class="faq__item"><h3>A Gerencia AI pode errar um número?</h3><p>As contas são feitas pelo banco de dados da loja, não pela IA. Se a pergunta ficar ambígua, ela pode entender outra coisa, por isso é bom perguntar de forma direta.</p></div>
+        <div class="faq__item"><h3>Quem pode fazer perguntas?</h3><p>Só os números de WhatsApp que você autorizar, como o seu e o do gerente.</p></div>
+        <div class="faq__item"><h3>E se a IA sair do ar?</h3><p>As perguntas mais comuns, como estoque baixo e faturamento, têm respostas prontas que funcionam sem ela.</p></div>
+        <div class="faq__item"><h3>Quanto custa a Gerencia AI?</h3><p>Depende do tamanho da loja e do sistema que você usa. Peça um orçamento e a gente monta a proposta para o seu mercado.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CONTATO -->
+  <section class="secao" id="contato" aria-labelledby="contato-h">
+    <div class="wrap contato">
+      <div class="contato__texto">
+        <p class="rotulo">Contato</p>
+        <h2 id="contato-h">Peça um orçamento para o seu mercado</h2>
+        <p class="secao__lead">Conte um pouco sobre o seu mercado e a gente monta uma proposta com o que a Gerencia AI pode responder para você.</p>
+        <p class="icon-line"><img src="assets/icons/whatsapp.svg" alt="" width="32" height="32">O retorno vem pelo WhatsApp ou por e-mail, como você preferir.</p>
+        <p class="contato__extra">Prefere escrever direto? <a class="link" href="mailto:gerenciaai.contato@gmail.com?subject=Or%C3%A7amento%20da%20Gerencia%20AI">Mande um e-mail</a></p>
+      </div>
+      <div class="contato__form">
+        <form class="form" action="mailto:gerenciaai.contato@gmail.com?subject=Pedido%20de%20or%C3%A7amento" method="post" enctype="text/plain" data-endpoint="" novalidate>
+          <div class="field"><label for="f-nome">Seu nome</label>
+            <input id="f-nome" name="nome" type="text" autocomplete="name" required aria-describedby="f-nome-err">
+            <p class="field__error" id="f-nome-err" hidden>Escreva o seu nome.</p></div>
+          <div class="field"><label for="f-mercado">Nome do mercado</label>
+            <input id="f-mercado" name="mercado" type="text" autocomplete="organization" required aria-describedby="f-mercado-err">
+            <p class="field__error" id="f-mercado-err" hidden>Escreva o nome do mercado.</p></div>
+          <div class="field"><label for="f-cidade">Cidade</label>
+            <input id="f-cidade" name="cidade" type="text" autocomplete="address-level2" required aria-describedby="f-cidade-err">
+            <p class="field__error" id="f-cidade-err" hidden>Escreva a cidade do mercado.</p></div>
+          <div class="field"><label for="f-contato">WhatsApp ou e-mail</label>
+            <input id="f-contato" name="contato" type="text" autocomplete="on" required aria-describedby="f-contato-err">
+            <p class="field__error" id="f-contato-err" hidden>Escreva um WhatsApp com DDD ou um e-mail para a gente responder.</p></div>
+          <div class="field field--msg"><label for="f-msg">Sistema que você usa ou mensagem (opcional)</label>
+            <textarea id="f-msg" name="mensagem" rows="3"></textarea></div>
+          <div class="btn-row"><button class="btn btn--primary" type="submit">Pedir um orçamento</button></div>
+          <p class="form__status" role="status" data-form-status></p>
+          <p class="t-small muted">A gente responde em até um dia útil.</p>
+        </form>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="rodape">
+  <div class="wrap">
+    <div class="rodape__cta">
+      <h2>Leve a Gerencia AI para o seu mercado</h2>
+      <a class="btn btn--primary" href="#contato">Pedir um orçamento<svg class="m-arrow" viewBox="0 0 12 12" aria-hidden="true"><path class="m-arrow__stem" d="M1 6h8"/><path class="m-arrow__head" d="M4.5 2.5 8 6l-3.5 3.5"/></svg></a>
+    </div>
+    <p class="rodape__nome" aria-hidden="true">Gerencia<span>AI</span></p>
+    <div class="rodape__linha">
+      <a class="nav__logo marca" href="#top"><span class="mark" data-mark="stack" aria-hidden="true"></span><span class="marca__nome">Gerencia<span class="marca__ai">AI</span></span></a>
+      <nav class="rodape__links" aria-label="Rodapé"><a href="#filme">Como funciona</a><a href="#demo">Demonstração</a><a href="#seguranca">Segurança</a><a href="#perguntas">Perguntas</a><a href="#faq">Dúvidas</a><a href="#contato">Contato</a></nav>
+    </div>
+    <div class="footer__legal">
+      <span>&copy; 2026 Gerencia AI</span>
+      <span>WhatsApp é marca de seu respectivo dono.</span>
+    </div>
+  </div>
+</footer>
+
+<nav class="actionbar" aria-label="Ação rápida">
+  <a class="btn btn--primary" href="#contato">Pedir um orçamento</a>
+</nav>
+
+<script type="module" src="assets/system.js"></script>
+<script type="module" src="assets/motion/motion.js"></script>
+<script src="js/dados-demo.js"></script>
+<script type="module" src="js/demo.js"></script>
+<script type="module" src="js/filme.js"></script>
+</body>
+</html>
