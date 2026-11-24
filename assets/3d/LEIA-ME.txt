@@ -1,0 +1,4 @@
+Fonte: Reddit Sans (peso 500, arquivo original vitrine/fonts/reddit-sans.woff2)
+Licença: SIL Open Font License 1.1 (OFL)
+Arquivo gerado: reddit-sans-frase.typeface.json
+Conteúdo: subconjunto de glifos no formato typeface.json do Three.js contendo apenas os caracteres usados na frase de abertura ("O que eu preciso repor esta semana?", maiúsculas, minúsculas, espaço e ponto de interrogação).

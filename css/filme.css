@@ -80,8 +80,10 @@
 
 /* estado inicial da sequência (palco escuro, sem celular, cartões e balões escondidos) */
 .filme--ativo .filme__frase { opacity: 1; }
-.filme--ativo .filme__palavra { display: inline-block; opacity: 0; transform: translateY(16px); will-change: transform, opacity; }
+.filme--frase-3d .filme__frase { visibility: hidden; opacity: 0; pointer-events: none; }
+.filme--ativo .filme__palavra { display: inline-block; opacity: 0; transform: translateY(16px); will-change: transform, opacity, filter; }
 .filme--ativo .filme__palavra.is-visivel { animation: filme-palavra-entrar .45s cubic-bezier(.22, 1, .36, 1) both; }
+.filme--ativo .filme__palavra.is-saindo { animation: filme-palavra-sair .55s cubic-bezier(.4, 0, .2, 1) both; }
 .filme--ativo .filme__frase.is-saindo { animation: filme-frase-sair .6s cubic-bezier(.22, 1, .36, 1) both; }
 
 /* ---- canvas 3D (Three.js) quando ativo; esconde o celular HTML sem mexer no layout do palco */
@@ -140,6 +142,10 @@
 @keyframes filme-palavra-entrar {
   from { opacity: 0; transform: translateY(16px); }
   to { opacity: 1; transform: translateY(0); }
+}
+@keyframes filme-palavra-sair {
+  from { opacity: 1; transform: translateY(0); filter: blur(0); }
+  to { opacity: 0; transform: translateY(-20px); filter: blur(6px); }
 }
 @keyframes filme-frase-sair {
   from { opacity: 1; transform: translate(-50%, -50%); }
@@ -230,6 +236,7 @@
 @media (prefers-reduced-motion: reduce) {
   .filme__canvas { display: none; }
   .filme--3d .celular { visibility: visible; }
+  .filme--frase-3d .filme__frase { opacity: 0; visibility: hidden; }
   .filme--ativo .filme__frase { opacity: 0; animation: none; }
   .filme--ativo .celular { opacity: 1; transform: none; animation: none; box-shadow: 0 40px 80px -20px rgb(0 0 0 / .7); }
   .filme--ativo .celular__lado { display: none; }

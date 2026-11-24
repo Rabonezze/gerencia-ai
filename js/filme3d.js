@@ -1,10 +1,13 @@
 // Gerencia AI: cena 3D real em WebGL (Three.js) para o filme da abertura (#filme).
-// Modela o celular com volume, tela em canvas 1080x2340 px e ícones 3D extrudados dos SVGs.
+// Inclui frase 3D com Reddit Sans, transição contínua (Hermite cúbica), celular modelado,
+// tela em canvas 1080x2340 px e ícones 3D extrudados dos SVGs.
 
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/RoundedBoxGeometry.js';
 import { RoomEnvironment } from 'three/addons/RoomEnvironment.js';
 import { SVGLoader } from 'three/addons/SVGLoader.js';
+import { FontLoader } from 'three/addons/FontLoader.js';
+import { TextGeometry } from 'three/addons/TextGeometry.js';
 
 // Dimensões físicas do celular 3D (proporção moderna ~19.5:9, centralizado na origem).
 const LARGURA_CEL = 1.54;
@@ -40,6 +43,7 @@ const PREENCHIMENTO_V = 0.78;
 const PREENCHIMENTO_H = 0.76;
 
 const PERGUNTA_TEXTO = 'O que eu preciso repor esta semana?';
+const PALAVRAS_FRASE = ['O', 'que', 'eu', 'preciso', 'repor', 'esta', 'semana?'];
 const FONTE_PRINCIPAL = '"Reddit Sans", system-ui, -apple-system, sans-serif';
 
 // Curvas de suavização (sempre suaves, sem tremer).
@@ -56,6 +60,10 @@ function easeInOutCubic(t) {
   return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
 }
 
+function easeInCubic(t) {
+  return t * t * t;
+}
+
 function easeOutQuart(t) {
   return 1 - Math.pow(1 - t, 4);
 }
@@ -66,6 +74,46 @@ function easeOutCubic(t) {
 
 function misturar(a, b, t) {
   return a + (b - a) * t;
+}
+
+// Interpolação Hermite cúbica contínua sobre quadros-chave { t, v, m? }.
+// Calcula tangentes Catmull-Rom centradas quando m não é informado, evitando paradas nas emendas.
+function avaliarTrilhaHermite(chaves, tempoMs) {
+  const n = chaves.length;
+  if (n === 0) return 0;
+  if (tempoMs <= chaves[0].t) return chaves[0].v;
+  if (tempoMs >= chaves[n - 1].t) return chaves[n - 1].v;
+
+  let i = 0;
+  while (i < n - 2 && tempoMs > chaves[i + 1].t) {
+    i += 1;
+  }
+
+  const k0 = chaves[i];
+  const k1 = chaves[i + 1];
+  const dt = k1.t - k0.t;
+  if (dt <= 0) return k1.v;
+
+  const tangente = (idx) => {
+    const k = chaves[idx];
+    if (k.m !== undefined) return k.m;
+    if (idx === 0) return (chaves[1].v - chaves[0].v) / (chaves[1].t - chaves[0].t);
+    if (idx === n - 1) return (chaves[n - 1].v - chaves[n - 2].v) / (chaves[n - 1].t - chaves[n - 2].t);
+    return (chaves[idx + 1].v - chaves[idx - 1].v) / (chaves[idx + 1].t - chaves[idx - 1].t);
+  };
+
+  const m0 = tangente(i);
+  const m1 = tangente(i + 1);
+  const u = (tempoMs - k0.t) / dt;
+  const u2 = u * u;
+  const u3 = u2 * u;
+
+  const h00 = 2 * u3 - 3 * u2 + 1;
+  const h10 = u3 - 2 * u2 + u;
+  const h01 = -2 * u3 + 3 * u2;
+  const h11 = u3 - u2;
+
+  return h00 * k0.v + h10 * (m0 * dt) + h01 * k1.v + h11 * (m1 * dt);
 }
 
 // Converte coordenadas do canvas (0..1080, 0..2340) para coordenadas locais da tela 3D.
@@ -616,6 +664,169 @@ async function criarLogoGerencia3D(raio) {
   return grupo;
 }
 
+// Constrói as palavras 3D da frase de abertura usando Reddit Sans (typeface.json).
+async function criarFrase3D() {
+  let fonte;
+  try {
+    const carregador = new FontLoader();
+    fonte = await carregador.loadAsync('assets/3d/reddit-sans-frase.typeface.json');
+  } catch {
+    return null;
+  }
+
+  const tamanhoLetra = 0.42;
+  const profundidadeLetra = 0.072; // ~17% da altura da letra
+  const espacoPalavra = tamanhoLetra * 0.27;
+  const alturaLinha = tamanhoLetra * 1.38;
+
+  // Referência vertical da maiúscula "O" para manter todas as palavras na mesma linha de base.
+  const geomRef = new TextGeometry('O', {
+    font: fonte,
+    size: tamanhoLetra,
+    depth: profundidadeLetra,
+    curveSegments: 14,
+    bevelEnabled: true,
+    bevelThickness: 0.011,
+    bevelSize: 0.008,
+    bevelSegments: 4
+  });
+  geomRef.computeBoundingBox();
+  const centroVerticalBase = (geomRef.boundingBox.min.y + geomRef.boundingBox.max.y) / 2;
+  geomRef.dispose();
+
+  const grupoFrase = new THREE.Group();
+  const itens = PALAVRAS_FRASE.map((texto) => {
+    const geom = new TextGeometry(texto, {
+      font: fonte,
+      size: tamanhoLetra,
+      depth: profundidadeLetra,
+      curveSegments: 16,
+      bevelEnabled: true,
+      bevelThickness: 0.011,
+      bevelSize: 0.008,
+      bevelSegments: 4
+    });
+    geom.computeBoundingBox();
+    const caixa = geom.boundingBox;
+    const largura = caixa.max.x - caixa.min.x;
+    const cx = (caixa.min.x + caixa.max.x) / 2;
+    const cz = (caixa.min.z + caixa.max.z) / 2;
+    geom.translate(-cx, -centroVerticalBase, -cz);
+    geom.computeVertexNormals();
+
+    const material = new THREE.MeshPhysicalMaterial({
+      color: 0xffffff,
+      emissive: 0xd9f5f2,
+      emissiveIntensity: 0.14,
+      roughness: 0.2,
+      metalness: 0.05,
+      clearcoat: 0.65,
+      clearcoatRoughness: 0.12,
+      transparent: true,
+      opacity: 0
+    });
+
+    const malha = new THREE.Mesh(geom, material);
+    const pivo = new THREE.Group();
+    pivo.add(malha);
+    grupoFrase.add(pivo);
+
+    return {
+      texto,
+      largura,
+      pivo,
+      malha,
+      material,
+      baseX: 0,
+      baseY: 0
+    };
+  });
+
+  // Quebra em 2 linhas no computador e 3 linhas no celular, ajustando a largura ao palco.
+  function posicionar(aspect, distBaseCam) {
+    const linhas =
+      aspect < 1.0
+        ? [
+            [0, 1, 2],
+            [3, 4],
+            [5, 6]
+          ]
+        : [
+            [0, 1, 2, 3],
+            [4, 5, 6]
+          ];
+
+    let larguraMax = 0;
+    const totalLinhas = linhas.length;
+
+    linhas.forEach((indices, numLinha) => {
+      const somaLarguras = indices.reduce((acc, idx) => acc + itens[idx].largura, 0);
+      const larguraLinha = somaLarguras + (indices.length - 1) * espacoPalavra;
+      larguraMax = Math.max(larguraMax, larguraLinha);
+
+      let cursorX = -larguraLinha / 2;
+      const yLinha = ((totalLinhas - 1) / 2 - numLinha) * alturaLinha;
+
+      indices.forEach((idx) => {
+        const item = itens[idx];
+        item.baseX = cursorX + item.largura / 2;
+        item.baseY = yLinha;
+        item.pivo.position.set(item.baseX, item.baseY, 0);
+        cursorX += item.largura + espacoPalavra;
+      });
+    });
+
+    const zFrase = 0.42;
+    const distFrase = Math.max(1.2, distBaseCam - zFrase);
+    const tanV = Math.tan(THREE.MathUtils.degToRad(34 / 2));
+    const larguraVisivel = 2 * distFrase * tanV * aspect;
+    const escala = Math.min(1.16, (larguraVisivel * 0.82) / Math.max(larguraMax, 0.1));
+
+    grupoFrase.position.set(0, 0.04, zFrase);
+    grupoFrase.scale.setScalar(escala);
+  }
+
+  function atualizar(tempoMs) {
+    if (tempoMs >= 3360) {
+      grupoFrase.visible = false;
+      return;
+    }
+    grupoFrase.visible = true;
+
+    // Flutuação quase imperceptível enquanto a frase descansa inteira no centro.
+    const pesoHold =
+      faixa(tempoMs, 1500, 1950) * (1 - faixa(tempoMs, 2450, 2950));
+    const flutuarY = Math.sin((tempoMs / 1000) * 1.9) * 0.018 * pesoHold;
+    const flutuarRotY = Math.sin((tempoMs / 1000) * 1.25) * 0.012 * pesoHold;
+    grupoFrase.rotation.y = flutuarRotY;
+
+    itens.forEach((item, indice) => {
+      const inicioEntrada = indice * 220;
+      const pEntrada = easeOutQuart(faixa(tempoMs, inicioEntrada, inicioEntrada + 580));
+
+      const inicioSaida = 2400 + indice * 35;
+      const pSaidaRaw = faixa(tempoMs, inicioSaida, inicioSaida + 680);
+      const pSaida = easeInCubic(pSaidaRaw);
+
+      const opEntrada = limitar01(faixa(tempoMs, inicioEntrada, inicioEntrada + 340) * 1.1);
+      const opSaida = 1 - easeInOutCubic(pSaidaRaw);
+      const opacidade = opEntrada * opSaida;
+
+      const offsetY = misturar(-0.32, 0, pEntrada) + pSaida * 0.28 + flutuarY;
+      const offsetZ = misturar(-0.62, 0, pEntrada) - pSaida * 1.12;
+      const rotX = misturar(0.42, 0, pEntrada) - pSaida * 0.64;
+
+      item.malha.visible = opacidade > 0.004;
+      item.material.opacity = opacidade;
+      item.material.depthWrite = opacidade > 0.65;
+      item.malha.position.set(0, offsetY, offsetZ);
+      item.malha.rotation.x = rotX;
+    });
+  }
+
+  return { grupo: grupoFrase, posicionar, atualizar };
+}
+
 // Monta a estrutura completa do celular 3D genérico (sem marca, com volume, botões e câmeras).
 function construirCorpoCelular(texturaTela) {
   const grupoCelular = new THREE.Group();
@@ -850,7 +1061,7 @@ export async function criarCena3D(palco) {
   luzRecorte.position.set(-3.4, 1.6, -2.6);
   cena.add(luzRecorte);
 
-  const luzPiso = new THREE.DirectionalLight(0x16a7a3, 0.36);
+  const luzPiso = new THREE.DirectionalLight(0x16a7a3, 0.25);
   luzPiso.position.set(0, -3.5, 2.2);
   cena.add(luzPiso);
 
@@ -936,12 +1147,17 @@ export async function criarCena3D(palco) {
     }
   }
 
-  // Carrega em paralelo o ícone 3D do WhatsApp e a logo 3D da Gerencia AI.
+  // Carrega em paralelo o ícone 3D do WhatsApp, a logo 3D da Gerencia AI e a frase 3D.
   const raioLogo3D = escalaCanvas(LOGO_RAIO_PX);
-  const [iconeWhats, logoGerencia] = await Promise.all([
+  const [iconeWhats, logoGerencia, frase3D] = await Promise.all([
     criarIconeWhatsapp3D(tamIcone3D),
-    criarLogoGerencia3D(raioLogo3D)
+    criarLogoGerencia3D(raioLogo3D),
+    criarFrase3D()
   ]);
+
+  if (frase3D) {
+    cena.add(frase3D.grupo);
+  }
 
   iconeWhats.position.set(posWhats.x, posWhats.y, 0.002);
   grupoHomeIcones.add(iconeWhats);
@@ -997,15 +1213,158 @@ export async function criarCena3D(palco) {
   sombraLogo.visible = false;
   grupoCelular.add(sombraLogo);
 
-  // Insere o canvas no palco (atrás da frase e dos cartões HTML).
+  // Insere o canvas no palco (atrás da frase HTML fallback e dos cartões HTML).
   palco.prepend(canvas);
 
-  // Métricas de câmera recalculadas a cada redimensionamento do palco.
+  // Métricas de câmera e trilhas contínuas recalculadas ao redimensionar o palco.
   let larguraPalco = Math.max(palco.clientWidth, 320);
   let alturaPalco = Math.max(palco.clientHeight, 320);
   let distInteiro = 6.8;
   let distZoomWhats = 2.2;
   let distZoomLogo = 1.95;
+  let celYFora = -4.2;
+  let trilhas = null;
+
+  const alvoWhats = new THREE.Vector3(posWhats.x, posWhats.y, TELA_Z + 0.08);
+  const alvoLogo = new THREE.Vector3(posLogo.x + 0.19, posLogo.y - 0.01, TELA_Z + 0.06);
+
+  const inicioDigitar = 9500;
+  const envioPergunta = inicioDigitar + PERGUNTA_TEXTO.length * 45 + 220; // ~11,30 s
+  const inicioDigitando = envioPergunta + 350; // ~11,65 s
+  const fimDigitando = inicioDigitando + 1500; // ~13,15 s
+  const inicioSaidaLoop = fimDigitando + 4850; // ~18,00 s (~4,85 s na cena final)
+  const duracaoLoopMs = inicioSaidaLoop + 550; // ~18,55 s
+
+  function reconstruirTrilhas() {
+    // O celular começa totalmente abaixo da borda inferior da tela em qualquer monitor.
+    const tanInicio = Math.tan(THREE.MathUtils.degToRad(33.4 / 2));
+    const distNaEntrada = distInteiro * 1.06 + 1.05;
+    celYFora = -(distNaEntrada * tanInicio + ALTURA_CEL * 0.54 + 0.35);
+
+    trilhas = {
+      // Pose do celular: entrada rápida desacelerando, pequena acomodação de ~1,5° e fluxo contínuo até o zoom out.
+      celY: [
+        { t: 2700, v: celYFora, m: Math.abs(celYFora) * 0.00145 },
+        { t: 4250, v: 0.045 },
+        { t: 4900, v: 0.008 },
+        { t: 6000, v: 0, m: 0 },
+        { t: 6500, v: 0, m: 0 },
+        { t: 9500, v: 0, m: 0 },
+        { t: inicioSaidaLoop, v: 0, m: 0 },
+        { t: duracaoLoopMs, v: celYFora, m: -Math.abs(celYFora) * 0.0019 }
+      ],
+      celZ: [
+        { t: 2700, v: -1.15, m: 0.0015 },
+        { t: 4400, v: 0.03 },
+        { t: 5150, v: 0 },
+        { t: 6000, v: 0, m: 0 },
+        { t: 6500, v: 0, m: 0 },
+        { t: 9500, v: 0, m: 0 }
+      ],
+      // Giro curto e elegante (~ -1,30 rad na lateral com botões até o ângulo de 3/4), sem meia volta.
+      rotY: [
+        { t: 2700, v: -1.3, m: 0.00135 },
+        { t: 4300, v: -0.34 },
+        { t: 4850, v: -0.375 },
+        { t: 6000, v: -0.07, m: 0 },
+        { t: 6500, v: -0.07, m: 0 },
+        { t: 7300, v: 0.1 },
+        { t: 8300, v: 0.145 },
+        { t: 9500, v: 0.16, m: 0 }
+      ],
+      rotX: [
+        { t: 2700, v: 0.24, m: -0.00018 },
+        { t: 4450, v: 0.105 },
+        { t: 6000, v: 0.04, m: 0 },
+        { t: 6500, v: 0.04, m: 0 },
+        { t: 7350, v: 0.015 },
+        { t: 8300, v: 0.025 },
+        { t: 9500, v: 0.06, m: 0 }
+      ],
+      rotZ: [
+        { t: 2700, v: 0.09, m: -0.00008 },
+        { t: 4550, v: 0.03 },
+        { t: 6000, v: 0, m: 0 },
+        { t: 6500, v: 0, m: 0 },
+        { t: 8100, v: -0.008 },
+        { t: 9500, v: -0.015, m: 0 }
+      ],
+      // Câmera: dolly in suave (~9-10%) durante frase + entrada do celular, emendando no zoom sem pausa.
+      camX: [
+        { t: 0, v: 0, m: 0 },
+        { t: 2700, v: 0, m: 0 },
+        { t: 4650, v: alvoWhats.x * 0.16 },
+        { t: 6000, v: alvoWhats.x, m: 0 },
+        { t: 6500, v: alvoWhats.x, m: 0 },
+        { t: 7300, v: alvoLogo.x },
+        { t: 7800, v: alvoLogo.x + 0.06 },
+        { t: 8300, v: alvoLogo.x - 0.035 },
+        { t: 9500, v: 0, m: 0 }
+      ],
+      camY: [
+        { t: 0, v: 0, m: 0 },
+        { t: 2700, v: 0, m: 0 },
+        { t: 4650, v: alvoWhats.y * 0.16 },
+        { t: 6000, v: alvoWhats.y, m: 0 },
+        { t: 6500, v: alvoWhats.y, m: 0 },
+        { t: 7300, v: alvoLogo.y },
+        { t: 7800, v: alvoLogo.y + 0.026 },
+        { t: 8300, v: alvoLogo.y - 0.014 },
+        { t: 9500, v: 0, m: 0 }
+      ],
+      camZ: [
+        { t: 0, v: distInteiro * 1.12, m: -0.00014 },
+        { t: 2400, v: distInteiro * 1.075 },
+        { t: 3600, v: distInteiro * 1.02 },
+        { t: 4750, v: distInteiro * 0.945 },
+        { t: 6000, v: distZoomWhats, m: 0 },
+        { t: 6500, v: distZoomWhats, m: 0 },
+        { t: 7300, v: distZoomLogo },
+        { t: 7800, v: distZoomLogo - 0.05 },
+        { t: 8300, v: distZoomLogo + 0.04 },
+        { t: 9500, v: distInteiro, m: 0 }
+      ],
+      alvoX: [
+        { t: 0, v: 0, m: 0 },
+        { t: 3200, v: 0, m: 0 },
+        { t: 4750, v: alvoWhats.x * 0.18 },
+        { t: 6000, v: alvoWhats.x, m: 0 },
+        { t: 6500, v: alvoWhats.x, m: 0 },
+        { t: 7300, v: alvoLogo.x },
+        { t: 8300, v: alvoLogo.x },
+        { t: 9500, v: 0, m: 0 }
+      ],
+      alvoY: [
+        { t: 0, v: 0, m: 0 },
+        { t: 3200, v: 0, m: 0 },
+        { t: 4750, v: alvoWhats.y * 0.18 },
+        { t: 6000, v: alvoWhats.y, m: 0 },
+        { t: 6500, v: alvoWhats.y, m: 0 },
+        { t: 7300, v: alvoLogo.y },
+        { t: 8300, v: alvoLogo.y },
+        { t: 9500, v: 0, m: 0 }
+      ],
+      alvoZ: [
+        { t: 0, v: 0, m: 0 },
+        { t: 3200, v: 0, m: 0 },
+        { t: 4750, v: alvoWhats.z * 0.18 },
+        { t: 6000, v: alvoWhats.z, m: 0 },
+        { t: 6500, v: alvoWhats.z, m: 0 },
+        { t: 7300, v: alvoLogo.z },
+        { t: 8300, v: alvoLogo.z },
+        { t: 9500, v: 0, m: 0 }
+      ],
+      fov: [
+        { t: 0, v: 34, m: -0.00025 },
+        { t: 2700, v: 33.3 },
+        { t: 4750, v: 31.6 },
+        { t: 6000, v: 30.8, m: 0 },
+        { t: 6500, v: 30.8, m: 0 },
+        { t: 7800, v: 30.5 },
+        { t: 9500, v: CAM_FOV_GRAUS, m: 0 }
+      ]
+    };
+  }
 
   function calcularDistanciasCamera() {
     const aspect = larguraPalco / alturaPalco;
@@ -1026,6 +1385,11 @@ export async function criarCena3D(palco) {
     const zLogoV = 0.46 / tanV;
     const zLogoH = 0.56 / tanH;
     distZoomLogo = Math.max(zLogoV, zLogoH) + TELA_Z + 0.16;
+
+    if (frase3D) {
+      frase3D.posicionar(aspect, distInteiro * 1.12);
+    }
+    reconstruirTrilhas();
   }
 
   function redimensionar() {
@@ -1043,22 +1407,53 @@ export async function criarCena3D(palco) {
   let observadorTamanho = null;
   let ultimoTempoMs = 0;
   let destruido = false;
+  let ultimoFov = CAM_FOV_GRAUS;
 
   const alvoCam = new THREE.Vector3(0, 0, 0);
   const posCam = new THREE.Vector3(0, 0, distInteiro);
-  const alvoWhats = new THREE.Vector3(posWhats.x, posWhats.y, TELA_Z + 0.08);
-  const alvoLogo = new THREE.Vector3(posLogo.x + 0.19, posLogo.y - 0.01, TELA_Z + 0.06);
 
-  // Atualiza todas as posições 3D, câmera e canvas da tela para um dado instante da linha do tempo.
+  // Atualiza frase 3D, celular, câmera e canvas da tela para um dado instante da linha do tempo.
   function renderizarNoTempo(tempoMs) {
     if (destruido) return;
     ultimoTempoMs = tempoMs;
     ondaLuz.visible = false; // só volta a aparecer na janela do toque (evita anel solto no recomeço)
 
-    // 1. 0 a 3,2 s: somente a frase HTML; celular escondido.
-    if (tempoMs < 3200) {
+    // Fade suave do canvas no início e no fim do loop para nunca piscar ao recomeçar.
+    const fadeInicio = faixa(tempoMs, 0, 380);
+    const fadeFim = 1 - faixa(tempoMs, inicioSaidaLoop + 180, duracaoLoopMs);
+    canvas.style.opacity = String((fadeInicio * fadeFim).toFixed(3));
+
+    // Atualiza a frase 3D (0 a 3,36 s, sobrepondo a entrada do celular entre 2,7 e 3,36 s).
+    if (frase3D) {
+      frase3D.atualizar(tempoMs);
+    }
+
+    // Câmera com velocidade contínua desde t = 0 (dolly in suave -> zoom -> zoom out centralizado).
+    const fovAtual = avaliarTrilhaHermite(trilhas.fov, tempoMs);
+    if (Math.abs(fovAtual - ultimoFov) > 0.001) {
+      ultimoFov = fovAtual;
+      camera.fov = fovAtual;
+      camera.updateProjectionMatrix();
+    }
+
+    posCam.set(
+      avaliarTrilhaHermite(trilhas.camX, tempoMs),
+      avaliarTrilhaHermite(trilhas.camY, tempoMs),
+      avaliarTrilhaHermite(trilhas.camZ, tempoMs)
+    );
+    alvoCam.set(
+      avaliarTrilhaHermite(trilhas.alvoX, tempoMs),
+      avaliarTrilhaHermite(trilhas.alvoY, tempoMs),
+      avaliarTrilhaHermite(trilhas.alvoZ, tempoMs)
+    );
+    camera.position.copy(posCam);
+    camera.lookAt(alvoCam);
+
+    // 0 a 2,7 s: somente a frase (e o dolly in da câmera); celular aguarda fora do quadro.
+    if (tempoMs < 2700) {
       grupoCelular.visible = false;
       sombraChao.visible = false;
+      luzPiso.intensity = 0.22;
       renderer.render(cena, camera);
       return;
     }
@@ -1066,129 +1461,35 @@ export async function criarCena3D(palco) {
     grupoCelular.visible = true;
     sombraChao.visible = true;
 
-    // ---- Pose do celular (posição e rotação) ----
-    let celX = 0;
-    let celY = 0;
-    let celZ = 0;
-    let rotX = 0;
-    let rotY = 0;
-    let rotZ = 0;
+    // ---- Pose contínua do celular + flutuação leve em todas as fases inteiras ----
+    const seg = tempoMs / 1000;
+    const entradaFlutuar = faixa(tempoMs, 2950, 3900);
+    const pausaClose = faixa(tempoMs, 4950, 5600) * (1 - faixa(tempoMs, 8350, 9200));
+    const saidaLoop = 1 - faixa(tempoMs, inicioSaidaLoop, duracaoLoopMs);
+    const pesoFlutuar = entradaFlutuar * (1 - pausaClose) * saidaLoop;
 
-    if (tempoMs < 4800) {
-      // 2. 3,2 a 4,8 s: surge de baixo e de trás girando (mostra traseira, câmera, lateral e botões).
-      const t = easeInOutCubic(faixa(tempoMs, 3200, 4800));
-      celY = misturar(-2.2, 0, t);
-      celZ = misturar(-1.8, 0, t);
-      rotY = misturar(-3.55, -0.36, t);
-      rotX = misturar(0.32, 0.12, t);
-      rotZ = misturar(0.12, 0.035, t);
-    } else if (tempoMs < 6000) {
-      // 3. 4,8 a 6,0 s: vira suavemente de frente enquanto a câmera aproxima da tela.
-      const t = easeInOutCubic(faixa(tempoMs, 4800, 6000));
-      rotY = misturar(-0.36, -0.07, t);
-      rotX = misturar(0.12, 0.04, t);
-      rotZ = misturar(0.035, 0, t);
-    } else if (tempoMs < 6500) {
-      // 4. 6,0 a 6,5 s: estável para o toque no WhatsApp.
-      rotY = -0.07;
-      rotX = 0.04;
-    } else if (tempoMs < 7300) {
-      // 5. 6,5 a 7,3 s: levemente inclinado para valorizar a extrusão 3D da logo Gerencia AI.
-      const t = easeInOutCubic(faixa(tempoMs, 6500, 7300));
-      rotY = misturar(-0.07, 0.12, t);
-      rotX = misturar(0.04, 0.03, t);
-    } else if (tempoMs < 8300) {
-      // 6. 7,3 a 8,3 s: segura na logo com paralaxe suave.
-      const t = faixa(tempoMs, 7300, 8300);
-      const onda = Math.sin(t * Math.PI);
-      rotY = 0.12 + Math.sin(t * Math.PI * 2) * 0.06;
-      rotX = 0.03 - onda * 0.035;
-    } else if (tempoMs < 9500) {
-      // 7. 8,3 a 9,5 s: zoom out para o celular inteiro levemente de lado.
-      const t = easeInOutCubic(faixa(tempoMs, 8300, 9500));
-      rotY = misturar(0.12, 0.16, t);
-      rotX = misturar(0.03, 0.06, t);
-      rotZ = misturar(0, -0.015, t);
-    } else {
-      // 8 e 9. 9,5 s em diante: flutuação contínua e leve, centrado no palco.
-      const s = (tempoMs - 9500) / 1000;
-      celY = Math.sin(s * 1.15) * 0.045;
-      rotY = 0.16 + Math.sin(s * 0.72) * 0.065;
-      rotX = 0.06 + Math.cos(s * 0.85) * 0.025;
-      rotZ = -0.015 + Math.sin(s * 0.6) * 0.01;
-    }
+    const celY =
+      avaliarTrilhaHermite(trilhas.celY, tempoMs) + Math.sin(seg * 1.18) * 0.044 * pesoFlutuar;
+    const celZ = avaliarTrilhaHermite(trilhas.celZ, tempoMs);
+    const rotY =
+      avaliarTrilhaHermite(trilhas.rotY, tempoMs) + Math.sin(seg * 0.72) * 0.062 * pesoFlutuar;
+    const rotX =
+      avaliarTrilhaHermite(trilhas.rotX, tempoMs) + Math.cos(seg * 0.86) * 0.024 * pesoFlutuar;
+    const rotZ =
+      avaliarTrilhaHermite(trilhas.rotZ, tempoMs) + Math.sin(seg * 0.6) * 0.01 * pesoFlutuar;
 
-    // Flutuação leve também no fim do surgimento (4,2 a 4,8 s).
-    if (tempoMs >= 4200 && tempoMs < 4800) {
-      const f = faixa(tempoMs, 4200, 4800);
-      celY += Math.sin(f * Math.PI) * 0.02;
-    }
-
-    grupoCelular.position.set(celX, celY, celZ);
+    grupoCelular.position.set(0, celY, celZ);
     grupoCelular.rotation.set(rotX, rotY, rotZ);
 
-    // Sombra suave no chão acompanha entrada e flutuação.
-    const visSombra = easeOutCubic(faixa(tempoMs, 3400, 4600));
-    const escalaSombra = 1 - celY * 0.12;
-    matSombraChao.opacity = visSombra * (0.48 - celY * 0.18);
+    // Brilho verde-petróleo da base sobe suavemente junto com a entrada do celular.
+    const brilhoEntrada = easeOutCubic(faixa(tempoMs, 2700, 4400));
+    luzPiso.intensity = misturar(0.2, 0.46, brilhoEntrada);
+
+    // Sombra suave no chão acompanha entrada, flutuação e saída do loop.
+    const visSombra = brilhoEntrada * saidaLoop;
+    const escalaSombra = 1 - celY * 0.1;
+    matSombraChao.opacity = Math.max(0, visSombra * (0.48 - celY * 0.16));
     sombraChao.scale.set(escalaSombra, escalaSombra, 1);
-
-    // ---- Câmera (zoom no WhatsApp -> desliza para a logo -> zoom out centralizado) ----
-    if (tempoMs < 4800) {
-      posCam.set(0, 0, distInteiro);
-      alvoCam.set(0, 0, 0);
-    } else if (tempoMs < 6000) {
-      const t = easeInOutCubic(faixa(tempoMs, 4800, 6000));
-      posCam.set(
-        misturar(0, alvoWhats.x, t),
-        misturar(0, alvoWhats.y, t),
-        misturar(distInteiro, distZoomWhats, t)
-      );
-      alvoCam.set(
-        misturar(0, alvoWhats.x, t),
-        misturar(0, alvoWhats.y, t),
-        misturar(0, alvoWhats.z, t)
-      );
-    } else if (tempoMs < 6500) {
-      posCam.set(alvoWhats.x, alvoWhats.y, distZoomWhats);
-      alvoCam.copy(alvoWhats);
-    } else if (tempoMs < 7300) {
-      const t = easeInOutCubic(faixa(tempoMs, 6500, 7300));
-      posCam.set(
-        misturar(alvoWhats.x, alvoLogo.x, t),
-        misturar(alvoWhats.y, alvoLogo.y, t),
-        misturar(distZoomWhats, distZoomLogo, t)
-      );
-      alvoCam.set(
-        misturar(alvoWhats.x, alvoLogo.x, t),
-        misturar(alvoWhats.y, alvoLogo.y, t),
-        misturar(alvoWhats.z, alvoLogo.z, t)
-      );
-    } else if (tempoMs < 8300) {
-      const t = faixa(tempoMs, 7300, 8300);
-      const paralaxeX = Math.sin(t * Math.PI * 2) * 0.08;
-      const paralaxeY = Math.sin(t * Math.PI) * 0.035;
-      posCam.set(alvoLogo.x + paralaxeX, alvoLogo.y + paralaxeY, distZoomLogo);
-      alvoCam.copy(alvoLogo);
-    } else if (tempoMs < 9500) {
-      const t = easeInOutCubic(faixa(tempoMs, 8300, 9500));
-      posCam.set(
-        misturar(alvoLogo.x, 0, t),
-        misturar(alvoLogo.y, 0, t),
-        misturar(distZoomLogo, distInteiro, t)
-      );
-      alvoCam.set(
-        misturar(alvoLogo.x, 0, t),
-        misturar(alvoLogo.y, 0, t),
-        misturar(alvoLogo.z, 0, t)
-      );
-    } else {
-      posCam.set(0, 0, distInteiro);
-      alvoCam.set(0, 0, 0);
-    }
-
-    camera.position.copy(posCam);
-    camera.lookAt(alvoCam);
 
     // ---- Ícone 3D do WhatsApp: encaixado desde o 1º quadro, levanta no zoom, afunda no toque ----
     const aberturaChat = faixa(tempoMs, 6500, 7250);
@@ -1275,20 +1576,13 @@ export async function criarCena3D(palco) {
     }
 
     // ---- Estado da conversa desenhada no canvas 1080x2340 ----
-    const inicioDigitar = 9500;
-    const fimDigitar = inicioDigitar + PERGUNTA_TEXTO.length * 45;
-    const envioPergunta = fimDigitar + 220; // ~11,30 s
-    const inicioDigitando = envioPergunta + 350; // ~11,65 s
-    const fimDigitando = inicioDigitando + 1500; // ~13,15 s
-
-    let textoDigitando = '';
-    if (tempoMs >= inicioDigitar && tempoMs < envioPergunta) {
-      const qtd = Math.min(
-        PERGUNTA_TEXTO.length,
-        Math.floor((tempoMs - inicioDigitar) / 45) + 1
-      );
-      textoDigitando = PERGUNTA_TEXTO.slice(0, qtd);
-    }
+    const textoDigitando =
+      tempoMs >= inicioDigitar && tempoMs < envioPergunta
+        ? PERGUNTA_TEXTO.slice(
+            0,
+            Math.min(PERGUNTA_TEXTO.length, Math.floor((tempoMs - inicioDigitar) / 45) + 1)
+          )
+        : '';
 
     const progressoPergunta = faixa(tempoMs, envioPergunta, envioPergunta + 380);
     const mostrandoDigitando = tempoMs >= inicioDigitando && tempoMs < fimDigitando;
@@ -1356,10 +1650,12 @@ export async function criarCena3D(palco) {
     renderizarNoTempo,
     redimensionar,
     destruir,
+    temFrase3D: Boolean(frase3D),
     tempos: {
-      cartaoConsultaMs: 9500 + PERGUNTA_TEXTO.length * 45 + 570, // ~11,65 s
-      cartaoNumerosMs: 9500 + PERGUNTA_TEXTO.length * 45 + 2370, // ~13,45 s
-      duracaoLoopMs: 9500 + PERGUNTA_TEXTO.length * 45 + 7370 // ~18,45 s (~5 s parado no final)
+      cartaoConsultaMs: inicioDigitando, // ~11,65 s
+      cartaoNumerosMs: fimDigitando + 300, // ~13,45 s
+      saidaCartoesMs: inicioSaidaLoop, // ~18,00 s
+      duracaoLoopMs
     }
   };
 }

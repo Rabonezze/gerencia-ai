@@ -180,7 +180,7 @@ function configurarFilme() {
       cena3d.destruir();
       cena3d = null;
     }
-    filme.classList.remove('filme--3d');
+    filme.classList.remove('filme--3d', 'filme--frase-3d');
   }
 
   function resetarParaEstadoFinal() {
@@ -192,11 +192,12 @@ function configurarFilme() {
     botaoRepetir.hidden = true;
   }
 
-  function prepararPalcoVazio() {
+  function prepararPalcoVazio(usarFrase3D) {
     filme.classList.remove('filme--pausado', ...classesFases);
     frase.classList.remove('is-saindo');
     botaoRepetir.hidden = true;
-    const spans = montarPalavrasDaFrase();
+    const spans = usarFrase3D ? [] : montarPalavrasDaFrase();
+    filme.classList.toggle('filme--frase-3d', usarFrase3D);
     filme.classList.add('filme--ativo');
     // Força recálculo de layout para reiniciar as animações CSS ao repetir o filme.
     void palco.offsetWidth;
@@ -209,23 +210,22 @@ function configurarFilme() {
       return;
     }
 
-    const palavras = prepararPalcoVazio();
+    const palavras = prepararPalcoVazio(cena3d.temFrase3D);
     const eventos = [];
 
-    // 1. 0 a 3,2 s: frase palavra por palavra (0,22 s entre palavras), fica 0,8 s inteira e sai.
-    palavras.forEach((span, indice) => {
-      eventos.push({
-        emMs: indice * INTERVALO_PALAVRA_MS,
-        acao: () => span.classList.add('is-visivel')
+    // 1. Se a fonte 3D não carregou, usa a frase HTML palavra por palavra e saída com blur.
+    if (!cena3d.temFrase3D) {
+      palavras.forEach((span, indice) => {
+        eventos.push({
+          emMs: indice * INTERVALO_PALAVRA_MS,
+          acao: () => span.classList.add('is-visivel')
+        });
+        eventos.push({
+          emMs: 2400 + indice * 35,
+          acao: () => span.classList.add('is-saindo')
+        });
       });
-    });
-
-    const fimEntradaFrase = (palavras.length - 1) * INTERVALO_PALAVRA_MS + 450;
-    const inicioSaidaFrase = Math.min(2600, fimEntradaFrase + 800);
-    eventos.push({
-      emMs: inicioSaidaFrase,
-      acao: () => frase.classList.add('is-saindo')
-    });
+    }
 
     // 2 a 8. Cartões HTML flutuantes sincronizados com a conversa no celular 3D.
     eventos.push({
@@ -235,6 +235,10 @@ function configurarFilme() {
     eventos.push({
       emMs: cena3d.tempos.cartaoNumerosMs,
       acao: () => filme.classList.add('filme--numeros')
+    });
+    eventos.push({
+      emMs: cena3d.tempos.saidaCartoesMs,
+      acao: () => filme.classList.remove('filme--consulta', 'filme--numeros')
     });
 
     // 9. Loop contínuo: recomeça após ~5 s na cena final.
@@ -257,7 +261,7 @@ function configurarFilme() {
 
     promessa3d = (async () => {
       try {
-        const modulo = await import('./filme3d.js?v=5');
+        const modulo = await import('./filme3d.js?v=6');
         if (desmontado || prefereMovimentoReduzido()) return null;
         const instancia = await modulo.criarCena3D(palco);
         if (!instancia || desmontado || prefereMovimentoReduzido()) {
@@ -266,6 +270,7 @@ function configurarFilme() {
         }
         cena3d = instancia;
         filme.classList.add('filme--3d');
+        filme.classList.toggle('filme--frase-3d', cena3d.temFrase3D);
         return cena3d;
       } catch {
         // Plano B: mantém a cena final estática em HTML/CSS sem erros.
