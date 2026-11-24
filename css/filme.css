@@ -84,6 +84,12 @@
 .filme--ativo .filme__palavra.is-visivel { animation: filme-palavra-entrar .45s cubic-bezier(.22, 1, .36, 1) both; }
 .filme--ativo .filme__frase.is-saindo { animation: filme-frase-sair .6s cubic-bezier(.22, 1, .36, 1) both; }
 
+/* ---- canvas 3D (Three.js) quando ativo; esconde o celular HTML sem mexer no layout do palco */
+.filme__canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; z-index: 2; pointer-events: none; }
+.filme--3d .filme__palco { perspective: none; }
+.filme--3d .celular { visibility: hidden; pointer-events: none; animation: none !important; }
+.filme--3d .celular__lado { display: none; }
+
 /* ---- celular 3D: o palco vira uma "câmera" com perspectiva; o celular ganha espessura com camadas
    (.celular__lado, criadas em js/filme.js) e a câmera surge, aproxima do ícone, do nome da conversa e se afasta.
    Os percentuais de translate centralizam o ponto focado (ícone / topo da conversa) no palco. */
@@ -222,6 +228,8 @@
 
 /* com "reduzir movimento", tudo fica imediatamente no estado final parado */
 @media (prefers-reduced-motion: reduce) {
+  .filme__canvas { display: none; }
+  .filme--3d .celular { visibility: visible; }
   .filme--ativo .filme__frase { opacity: 0; animation: none; }
   .filme--ativo .celular { opacity: 1; transform: none; animation: none; box-shadow: 0 40px 80px -20px rgb(0 0 0 / .7); }
   .filme--ativo .celular__lado { display: none; }

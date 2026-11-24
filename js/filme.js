@@ -21,7 +21,7 @@ function criarIndicadorDigitando() {
 }
 
 // Linha do tempo pausável: avança com requestAnimationFrame e congela quando a aba fica oculta.
-function criarLinhaDoTempo(aoMudarPausa) {
+function criarLinhaDoTempo(aoMudarPausa, aoAtualizar) {
   let eventos = [];
   let tempoDecorrido = 0;
   let ultimoQuadro = 0;
@@ -48,9 +48,13 @@ function criarLinhaDoTempo(aoMudarPausa) {
       }
     }
 
-    if (pendentes > 0 && rodando && !pausado) {
+    if (aoAtualizar) {
+      aoAtualizar(tempoDecorrido);
+    }
+
+    if ((pendentes > 0 || aoAtualizar) && rodando && !pausado) {
       quadroId = window.requestAnimationFrame(passo);
-    } else if (pendentes === 0) {
+    } else if (pendentes === 0 && !aoAtualizar) {
       rodando = false;
     }
   }
@@ -106,19 +110,16 @@ function criarLinhaDoTempo(aoMudarPausa) {
   return { iniciar, pausar, retomar, cancelar };
 }
 
-// Tarefa A: filme da abertura (#filme).
+// Tarefa A: filme da abertura (#filme), com Three.js 3D e plano B em HTML estático.
 function configurarFilme() {
   const filme = document.getElementById('filme');
   if (!filme) return null;
 
   const palco = filme.querySelector('.filme__palco');
   const frase = filme.querySelector('[data-cena="frase"]');
-  const msgs = filme.querySelector('.celular__msgs');
-  const resposta = filme.querySelector('[data-cena="resposta"]');
-  const campoDigitar = filme.querySelector('[data-cena="digitando"]');
   const botaoRepetir = filme.querySelector('.filme__repetir');
 
-  if (!palco || !frase || !msgs || !resposta || !campoDigitar || !botaoRepetir) {
+  if (!palco || !frase || !botaoRepetir) {
     return null;
   }
 
@@ -137,32 +138,22 @@ function configurarFilme() {
     'filme--resposta'
   ];
 
-  let indicadorAtual = null;
+  let cena3d = null;
+  let promessa3d = null;
+  let visivelNaTela = false;
   let jaIniciou = false;
+  let desmontado = false;
 
-  // Espessura do celular 3D: camadas iguais à moldura, empilhadas para trás (só aparecem com o filme ativo).
-  const celular = filme.querySelector('.celular');
-  if (celular && !celular.querySelector('.celular__lado')) {
-    const camadas = document.createDocumentFragment();
-    for (let i = 1; i <= CAMADAS_ESPESSURA; i += 1) {
-      const lado = document.createElement('span');
-      lado.className = 'celular__lado';
-      lado.style.setProperty('--i', String(i));
-      camadas.append(lado);
+  const linhaDoTempo = criarLinhaDoTempo(
+    (pausado) => {
+      filme.classList.toggle('filme--pausado', pausado);
+    },
+    (tempoMs) => {
+      if (cena3d) {
+        cena3d.renderizarNoTempo(tempoMs);
+      }
     }
-    celular.prepend(camadas);
-  }
-
-  const linhaDoTempo = criarLinhaDoTempo((pausado) => {
-    filme.classList.toggle('filme--pausado', pausado);
-  });
-
-  function removerDigitando() {
-    if (indicadorAtual) {
-      indicadorAtual.remove();
-      indicadorAtual = null;
-    }
-  }
+  );
 
   function montarPalavrasDaFrase() {
     const palavras = textoFraseOriginal.split(/\s+/).filter(Boolean);
@@ -184,21 +175,26 @@ function configurarFilme() {
     return spans;
   }
 
+  function destruirCena3D() {
+    if (cena3d) {
+      cena3d.destruir();
+      cena3d = null;
+    }
+    filme.classList.remove('filme--3d');
+  }
+
   function resetarParaEstadoFinal() {
     linhaDoTempo.cancelar();
-    removerDigitando();
+    destruirCena3D();
     filme.classList.remove('filme--ativo', 'filme--pausado', ...classesFases);
     frase.classList.remove('is-saindo');
     frase.textContent = textoFraseOriginal;
-    campoDigitar.textContent = PLACEHOLDER_DIGITAR;
     botaoRepetir.hidden = true;
   }
 
   function prepararPalcoVazio() {
-    removerDigitando();
     filme.classList.remove('filme--pausado', ...classesFases);
     frase.classList.remove('is-saindo');
-    campoDigitar.textContent = PLACEHOLDER_DIGITAR;
     botaoRepetir.hidden = true;
     const spans = montarPalavrasDaFrase();
     filme.classList.add('filme--ativo');
@@ -207,8 +203,8 @@ function configurarFilme() {
     return spans;
   }
 
-  function reproduzirFilme() {
-    if (prefereMovimentoReduzido()) {
+  function reproduzirFilme3D() {
+    if (desmontado || prefereMovimentoReduzido() || !cena3d) {
       resetarParaEstadoFinal();
       return;
     }
@@ -231,110 +227,125 @@ function configurarFilme() {
       acao: () => frase.classList.add('is-saindo')
     });
 
-    // 2. 3,2 a 4,6 s: o celular surge de baixo, inclinado, e se ajeita no centro.
-    eventos.push({ emMs: 3200, acao: () => filme.classList.add('filme--celular') });
-
-    // 3. 4,6 a 5,7 s: a câmera se aproxima da tela inicial; o ícone do WhatsApp sobe no meio do caminho.
-    eventos.push({ emMs: 4600, acao: () => filme.classList.add('filme--zoom-icone') });
-    eventos.push({ emMs: 5000, acao: () => filme.classList.add('filme--icone') });
-
-    // 4. 6,0 a 7,6 s: toque no ícone, a conversa abre e a câmera mostra o nome "Gerencia AI" de perto.
-    eventos.push({ emMs: 6000, acao: () => filme.classList.add('filme--toque') });
+    // 2 a 8. Cartões HTML flutuantes sincronizados com a conversa no celular 3D.
     eventos.push({
-      emMs: 6300,
-      acao: () => filme.classList.add('filme--chat', 'filme--zoom-topo')
+      emMs: cena3d.tempos.cartaoConsultaMs,
+      acao: () => filme.classList.add('filme--consulta')
+    });
+    eventos.push({
+      emMs: cena3d.tempos.cartaoNumerosMs,
+      acao: () => filme.classList.add('filme--numeros')
     });
 
-    // 5. 7,6 a 8,8 s: a câmera se afasta e mostra o celular inteiro, balançando de leve dali em diante.
-    eventos.push({ emMs: 7600, acao: () => filme.classList.add('filme--afastar') });
-
-    // 6. 8,9 a 10,8 s: digitação letra por letra (45 ms/letra), volta para "Mensagem" e envia o balão.
-    const inicioDigitar = 8900;
-    for (let i = 1; i <= PERGUNTA_FILME.length; i += 1) {
-      const trecho = PERGUNTA_FILME.slice(0, i);
-      eventos.push({
-        emMs: inicioDigitar + (i - 1) * INTERVALO_LETRA_MS,
-        acao: () => {
-          campoDigitar.textContent = trecho;
-        }
-      });
-    }
-    const envio = inicioDigitar + PERGUNTA_FILME.length * INTERVALO_LETRA_MS + 300;
+    // 9. Loop contínuo: recomeça após ~5 s na cena final.
     eventos.push({
-      emMs: envio,
-      acao: () => {
-        campoDigitar.textContent = PLACEHOLDER_DIGITAR;
-        filme.classList.add('filme--pergunta');
-      }
+      emMs: cena3d.tempos.duracaoLoopMs,
+      acao: () => window.setTimeout(reproduzirFilme3D, 0)
     });
 
-    // 7. Cartão "Consulta conferida" pela esquerda e "digitando…" no chat.
-    eventos.push({
-      emMs: envio + 450,
-      acao: () => {
-        filme.classList.add('filme--consulta');
-        removerDigitando();
-        indicadorAtual = criarIndicadorDigitando();
-        msgs.insertBefore(indicadorAtual, resposta);
-      }
-    });
-
-    // 8. Troca "digitando…" pela resposta e entra o cartão "Números" pela direita.
-    eventos.push({
-      emMs: envio + 2050,
-      acao: () => {
-        removerDigitando();
-        filme.classList.add('filme--resposta');
-      }
-    });
-    eventos.push({ emMs: envio + 2300, acao: () => filme.classList.add('filme--numeros') });
-
-    // 9. Loop: a cena final fica na tela uns 5 s e o filme recomeça sozinho (sem botão).
-    eventos.push({
-      emMs: envio + 7300,
-      // fora do laço da linha do tempo, para o recomeço não ser cancelado pelo quadro que ainda está rodando
-      acao: () => window.setTimeout(reproduzirFilme, 0)
-    });
-
+    cena3d.renderizarNoTempo(0);
     linhaDoTempo.iniciar(eventos);
+    if (!visivelNaTela || document.hidden) {
+      linhaDoTempo.pausar();
+    }
   }
 
-  botaoRepetir.addEventListener('click', reproduzirFilme);
+  // Carrega o Three.js sob demanda quando #filme se aproxima da janela visível.
+  async function carregarCena3D() {
+    if (cena3d) return cena3d;
+    if (promessa3d) return promessa3d;
+
+    promessa3d = (async () => {
+      try {
+        const modulo = await import('./filme3d.js?v=5');
+        if (desmontado || prefereMovimentoReduzido()) return null;
+        const instancia = await modulo.criarCena3D(palco);
+        if (!instancia || desmontado || prefereMovimentoReduzido()) {
+          instancia?.destruir();
+          return null;
+        }
+        cena3d = instancia;
+        filme.classList.add('filme--3d');
+        return cena3d;
+      } catch {
+        // Plano B: mantém a cena final estática em HTML/CSS sem erros.
+        return null;
+      }
+    })();
+
+    return promessa3d;
+  }
+
+  botaoRepetir.addEventListener('click', () => {
+    if (cena3d) reproduzirFilme3D();
+  });
 
   if (prefereMovimentoReduzido()) {
-    return { linhaDoTempo, resetarParaEstadoFinal };
+    return { linhaDoTempo, resetarParaEstadoFinal, deveRetomar: () => false };
   }
 
-  // Prepara o palco escuro antes de atingir 35% visível para evitar salto visual.
-  prepararPalcoVazio();
-
+  // Observa proximidade para pré-carregar o módulo 3D antes de entrar na tela.
   if ('IntersectionObserver' in window) {
-    const observador = new IntersectionObserver(
+    const observadorCarga = new IntersectionObserver(
       (entradas) => {
-        const visivel = entradas.some(
+        if (!entradas.some((entrada) => entrada.isIntersecting)) return;
+        observadorCarga.disconnect();
+        carregarCena3D();
+      },
+      { rootMargin: '300px 0px' }
+    );
+    observadorCarga.observe(filme);
+
+    const observadorVisibilidade = new IntersectionObserver(
+      (entradas) => {
+        visivelNaTela = entradas.some(
           (entrada) => entrada.isIntersecting && entrada.intersectionRatio >= 0.35
         );
-        // Fora da tela o loop fica pausado (não gasta o computador); ao voltar, continua de onde parou.
-        if (!visivel) {
+
+        if (!visivelNaTela) {
           if (jaIniciou) linhaDoTempo.pausar();
           return;
         }
+
         if (!jaIniciou) {
           jaIniciou = true;
-          reproduzirFilme();
-        } else if (!document.hidden) {
+          carregarCena3D().then((instancia) => {
+            if (!instancia || desmontado || prefereMovimentoReduzido()) {
+              resetarParaEstadoFinal();
+              return;
+            }
+            reproduzirFilme3D();
+          });
+        } else if (cena3d && !document.hidden) {
           linhaDoTempo.retomar();
         }
       },
       { threshold: [0, 0.35] }
     );
-    observador.observe(filme);
+    observadorVisibilidade.observe(filme);
   } else {
+    visivelNaTela = true;
     jaIniciou = true;
-    reproduzirFilme();
+    carregarCena3D().then((instancia) => {
+      if (!instancia) {
+        resetarParaEstadoFinal();
+        return;
+      }
+      reproduzirFilme3D();
+    });
   }
 
-  return { linhaDoTempo, resetarParaEstadoFinal };
+  window.addEventListener('pagehide', () => {
+    desmontado = true;
+    linhaDoTempo.cancelar();
+    destruirCena3D();
+  });
+
+  return {
+    linhaDoTempo,
+    resetarParaEstadoFinal,
+    deveRetomar: () => visivelNaTela && !prefereMovimentoReduzido()
+  };
 }
 
 // Tarefa B: cena de recusa (#recusa, seção Segurança).
@@ -425,7 +436,7 @@ function configurarRecusa() {
   }
 
   if (prefereMovimentoReduzido()) {
-    return { linhaDoTempo, resetarParaEstadoFinal };
+    return { linhaDoTempo, resetarParaEstadoFinal, deveRetomar: () => false };
   }
 
   // Esconde os três itens até #recusa ficar 40% visível.
@@ -450,6 +461,7 @@ function configurarRecusa() {
     reproduzirRecusa();
   }
 
+  // A recusa roda uma vez só: ao voltar para a aba, basta continuar de onde parou.
   return { linhaDoTempo, resetarParaEstadoFinal };
 }
 
@@ -459,10 +471,10 @@ function iniciarCenas() {
 
   // Pausa ao sair da aba do navegador e retoma exatamente de onde parou ao voltar.
   document.addEventListener('visibilitychange', () => {
-    controladores.forEach(({ linhaDoTempo }) => {
+    controladores.forEach(({ linhaDoTempo, deveRetomar }) => {
       if (document.hidden) {
         linhaDoTempo.pausar();
-      } else {
+      } else if (!deveRetomar || deveRetomar()) {
         linhaDoTempo.retomar();
       }
     });
