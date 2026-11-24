@@ -445,10 +445,39 @@ function iniciarCenas() {
   });
 }
 
+// Encolhe o celular (sem nunca aumentar) para caber inteiro no palco, com folga em cima e embaixo.
+// Assim ele fica centralizado e completo em qualquer zoom do navegador e em qualquer monitor.
+const FOLGA_CELULAR_PX = 28;
+
+function ajustarEscalaCelular() {
+  document.querySelectorAll('.filme__palco').forEach((palco) => {
+    const celular = palco.querySelector('.celular');
+    if (!celular || !celular.offsetHeight) return;
+    const escala = Math.min(
+      1,
+      (palco.clientHeight - FOLGA_CELULAR_PX * 2) / celular.offsetHeight,
+      (palco.clientWidth - FOLGA_CELULAR_PX * 2) / celular.offsetWidth
+    );
+    palco.style.setProperty('--escala-celular', Math.max(0.5, escala).toFixed(3));
+  });
+}
+
+function iniciarEscalaCelular() {
+  ajustarEscalaCelular();
+  if ('ResizeObserver' in window) {
+    const observador = new ResizeObserver(ajustarEscalaCelular);
+    document.querySelectorAll('.filme__palco').forEach((palco) => observador.observe(palco));
+  } else {
+    window.addEventListener('resize', ajustarEscalaCelular);
+  }
+}
+
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', iniciarCenas, { once: true });
+  document.addEventListener('DOMContentLoaded', iniciarEscalaCelular, { once: true });
 } else {
   iniciarCenas();
+  iniciarEscalaCelular();
 }
 
 export { };

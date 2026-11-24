@@ -4,7 +4,10 @@
    keyframes), mas a cena final parada precisa continuar igual a esta. */
 
 .filme { position: relative; margin-top: clamp(48px, 6vw, 80px); }
-.filme__palco { position: relative; height: clamp(560px, 70vh, 700px); border-radius: 28px; overflow: hidden; isolation: isolate;
+/* O palco cabe na tela visível (abaixo do menu) em qualquer zoom; o celular fica no centro e encolhe
+   junto (--escala-celular, calculada em js/filme.js) para nunca cortar em cima nem embaixo. */
+.filme__palco { position: relative; height: clamp(480px, calc(100vh - var(--nav, 72px) - 40px), 760px);
+  height: clamp(480px, calc(100svh - var(--nav, 72px) - 40px), 760px); border-radius: 28px; overflow: hidden; isolation: isolate;
   background:
     radial-gradient(40% 55% at 50% 100%, rgb(18 163 160 / .55), transparent 70%),
     radial-gradient(30% 40% at 15% 20%, rgb(111 224 207 / .14), transparent 70%),
@@ -19,7 +22,8 @@
   font: 500 clamp(32px, 4.6vw, 64px)/1.08 var(--font-display); letter-spacing: -0.035em; color: #fff; opacity: 0; pointer-events: none; }
 
 /* o celular */
-.celular { position: absolute; left: 50%; bottom: -40px; z-index: 2; width: 300px; height: 620px; transform: translateX(-50%);
+.celular { position: absolute; inset: 0; margin: auto; z-index: 2; width: 300px; height: 620px;
+  scale: var(--escala-celular, 1); transform-origin: 50% 50%;
   padding: 12px; border-radius: 48px; background: linear-gradient(145deg, #2b3a42, #0b1418);
   box-shadow: 0 0 0 1px rgb(255 255 255 / .12), 0 40px 80px -20px rgb(0 0 0 / .7), inset 0 0 0 2px rgb(255 255 255 / .05); }
 .celular__tela { position: relative; height: 100%; border-radius: 38px; overflow: hidden; background: var(--wa-ground, #efeae2); }
@@ -63,7 +67,7 @@
 @media (max-width: 760px) {
   .filme__palco { height: 600px; }
   .filme__card { display: none; }
-  .celular { width: 270px; height: 560px; bottom: -30px; }
+  .celular { width: 270px; height: 560px; }
   .celular__home { grid-template-columns: repeat(4, 46px); gap: 18px 12px; padding: 84px 16px; }
   .celular__home .app { width: 46px; height: 46px; border-radius: 12px; }
 }
@@ -80,7 +84,7 @@
 .filme--ativo .filme__palavra.is-visivel { animation: filme-palavra-entrar .45s cubic-bezier(.22, 1, .36, 1) both; }
 .filme--ativo .filme__frase.is-saindo { animation: filme-frase-sair .6s cubic-bezier(.22, 1, .36, 1) both; }
 
-.filme--ativo .celular { opacity: 0; transform: translate(-50%, 120px); will-change: transform, opacity; }
+.filme--ativo .celular { opacity: 0; transform: translateY(120px); will-change: transform, opacity; }
 .filme--ativo.filme--celular .celular { animation: filme-celular-entrar 1s cubic-bezier(.22, 1, .36, 1) both; }
 
 .filme--ativo .celular__home { opacity: 1; visibility: visible; }
@@ -115,8 +119,8 @@
   to { opacity: 0; transform: translate(-50%, calc(-50% - 24px)); }
 }
 @keyframes filme-celular-entrar {
-  from { opacity: 0; transform: translate(-50%, 120px); }
-  to { opacity: 1; transform: translate(-50%, 0); }
+  from { opacity: 0; transform: translateY(120px); }
+  to { opacity: 1; transform: none; }
 }
 @keyframes filme-toque {
   0% { transform: scale(1); }
@@ -173,7 +177,7 @@
 /* com "reduzir movimento", tudo fica imediatamente no estado final parado */
 @media (prefers-reduced-motion: reduce) {
   .filme--ativo .filme__frase { opacity: 0; animation: none; }
-  .filme--ativo .celular { opacity: 1; transform: translateX(-50%); animation: none; }
+  .filme--ativo .celular { opacity: 1; transform: none; animation: none; }
   .filme--ativo .celular__home { opacity: 0; visibility: hidden; animation: none; }
   .filme--ativo .celular__chat { opacity: 1; transform: none; pointer-events: auto; animation: none; }
   .filme--ativo [data-cena="pergunta"],
