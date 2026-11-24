@@ -4,6 +4,7 @@ const PERGUNTA_FILME = 'O que eu preciso repor esta semana?';
 const PLACEHOLDER_DIGITAR = 'Mensagem';
 const INTERVALO_PALAVRA_MS = 220;
 const INTERVALO_LETRA_MS = 45;
+const CAMADAS_ESPESSURA = 9;
 
 function prefereMovimentoReduzido() {
   return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -124,7 +125,11 @@ function configurarFilme() {
   const textoFraseOriginal = frase.textContent.trim();
   const classesFases = [
     'filme--celular',
+    'filme--zoom-icone',
+    'filme--icone',
     'filme--toque',
+    'filme--zoom-topo',
+    'filme--afastar',
     'filme--chat',
     'filme--pergunta',
     'filme--consulta',
@@ -134,6 +139,19 @@ function configurarFilme() {
 
   let indicadorAtual = null;
   let jaIniciou = false;
+
+  // Espessura do celular 3D: camadas iguais à moldura, empilhadas para trás (só aparecem com o filme ativo).
+  const celular = filme.querySelector('.celular');
+  if (celular && !celular.querySelector('.celular__lado')) {
+    const camadas = document.createDocumentFragment();
+    for (let i = 1; i <= CAMADAS_ESPESSURA; i += 1) {
+      const lado = document.createElement('span');
+      lado.className = 'celular__lado';
+      lado.style.setProperty('--i', String(i));
+      camadas.append(lado);
+    }
+    celular.prepend(camadas);
+  }
 
   const linhaDoTempo = criarLinhaDoTempo((pausado) => {
     filme.classList.toggle('filme--pausado', pausado);
@@ -213,43 +231,46 @@ function configurarFilme() {
       acao: () => frase.classList.add('is-saindo')
     });
 
-    // 2. 3,2 a 4,6 s: celular sobe com a tela inicial visível.
+    // 2. 3,2 a 4,6 s: o celular surge de baixo, inclinado, e se ajeita no centro.
+    eventos.push({ emMs: 3200, acao: () => filme.classList.add('filme--celular') });
+
+    // 3. 4,6 a 5,7 s: a câmera se aproxima da tela inicial; o ícone do WhatsApp sobe no meio do caminho.
+    eventos.push({ emMs: 4600, acao: () => filme.classList.add('filme--zoom-icone') });
+    eventos.push({ emMs: 5000, acao: () => filme.classList.add('filme--icone') });
+
+    // 4. 6,0 a 7,6 s: toque no ícone, a conversa abre e a câmera mostra o nome "Gerencia AI" de perto.
+    eventos.push({ emMs: 6000, acao: () => filme.classList.add('filme--toque') });
     eventos.push({
-      emMs: 3200,
-      acao: () => filme.classList.add('filme--celular')
+      emMs: 6300,
+      acao: () => filme.classList.add('filme--chat', 'filme--zoom-topo')
     });
 
-    // 3. 4,6 a 5,6 s: toque no WhatsApp e abertura da conversa.
-    eventos.push({
-      emMs: 4600,
-      acao: () => filme.classList.add('filme--toque')
-    });
-    eventos.push({
-      emMs: 4920,
-      acao: () => filme.classList.add('filme--chat')
-    });
+    // 5. 7,6 a 8,8 s: a câmera se afasta e mostra o celular inteiro, balançando de leve dali em diante.
+    eventos.push({ emMs: 7600, acao: () => filme.classList.add('filme--afastar') });
 
-    // 4. 5,6 a 8,0 s: digitação letra por letra (45 ms/letra), volta para "Mensagem" e envia balão.
+    // 6. 8,9 a 10,8 s: digitação letra por letra (45 ms/letra), volta para "Mensagem" e envia o balão.
+    const inicioDigitar = 8900;
     for (let i = 1; i <= PERGUNTA_FILME.length; i += 1) {
       const trecho = PERGUNTA_FILME.slice(0, i);
       eventos.push({
-        emMs: 5600 + (i - 1) * INTERVALO_LETRA_MS,
+        emMs: inicioDigitar + (i - 1) * INTERVALO_LETRA_MS,
         acao: () => {
           campoDigitar.textContent = trecho;
         }
       });
     }
+    const envio = inicioDigitar + PERGUNTA_FILME.length * INTERVALO_LETRA_MS + 300;
     eventos.push({
-      emMs: 7550,
+      emMs: envio,
       acao: () => {
         campoDigitar.textContent = PLACEHOLDER_DIGITAR;
         filme.classList.add('filme--pergunta');
       }
     });
 
-    // 5. 8,0 a 9,6 s: cartão "Consulta conferida" pela esquerda e "digitando…" no chat.
+    // 7. Cartão "Consulta conferida" pela esquerda e "digitando…" no chat.
     eventos.push({
-      emMs: 8000,
+      emMs: envio + 450,
       acao: () => {
         filme.classList.add('filme--consulta');
         removerDigitando();
@@ -258,22 +279,19 @@ function configurarFilme() {
       }
     });
 
-    // 6. 9,6 a 11,0 s: troca "digitando…" pela resposta e entra o cartão "Números" pela direita.
+    // 8. Troca "digitando…" pela resposta e entra o cartão "Números" pela direita.
     eventos.push({
-      emMs: 9600,
+      emMs: envio + 2050,
       acao: () => {
         removerDigitando();
         filme.classList.add('filme--resposta');
       }
     });
-    eventos.push({
-      emMs: 9850,
-      acao: () => filme.classList.add('filme--numeros')
-    });
+    eventos.push({ emMs: envio + 2300, acao: () => filme.classList.add('filme--numeros') });
 
-    // 7. Loop: a cena final fica parada até os 14,5 s e o filme recomeça sozinho (sem botão).
+    // 9. Loop: a cena final fica na tela uns 5 s e o filme recomeça sozinho (sem botão).
     eventos.push({
-      emMs: 14500,
+      emMs: envio + 7300,
       // fora do laço da linha do tempo, para o recomeço não ser cancelado pelo quadro que ainda está rodando
       acao: () => window.setTimeout(reproduzirFilme, 0)
     });
@@ -333,6 +351,19 @@ function configurarRecusa() {
 
   let indicadorAtual = null;
   let jaIniciou = false;
+
+  // Espessura do celular 3D: camadas iguais à moldura, empilhadas para trás (só aparecem com o filme ativo).
+  const celular = filme.querySelector('.celular');
+  if (celular && !celular.querySelector('.celular__lado')) {
+    const camadas = document.createDocumentFragment();
+    for (let i = 1; i <= CAMADAS_ESPESSURA; i += 1) {
+      const lado = document.createElement('span');
+      lado.className = 'celular__lado';
+      lado.style.setProperty('--i', String(i));
+      camadas.append(lado);
+    }
+    celular.prepend(camadas);
+  }
 
   const linhaDoTempo = criarLinhaDoTempo((pausado) => {
     recusa.classList.toggle('recusa--pausada', pausado);

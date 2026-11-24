@@ -84,12 +84,33 @@
 .filme--ativo .filme__palavra.is-visivel { animation: filme-palavra-entrar .45s cubic-bezier(.22, 1, .36, 1) both; }
 .filme--ativo .filme__frase.is-saindo { animation: filme-frase-sair .6s cubic-bezier(.22, 1, .36, 1) both; }
 
-.filme--ativo .celular { opacity: 0; transform: translateY(120px); will-change: transform, opacity; }
-.filme--ativo.filme--celular .celular { animation: filme-celular-entrar 1s cubic-bezier(.22, 1, .36, 1) both; }
+/* ---- celular 3D: o palco vira uma "câmera" com perspectiva; o celular ganha espessura com camadas
+   (.celular__lado, criadas em js/filme.js) e a câmera surge, aproxima do ícone, do nome da conversa e se afasta.
+   Os percentuais de translate centralizam o ponto focado (ícone / topo da conversa) no palco. */
+.filme--ativo .filme__palco { perspective: 1800px; }
+.filme--ativo .celular { opacity: 0; transform-style: preserve-3d; box-shadow: none;
+  transform: translate3d(0, 140px, -260px) rotateX(28deg) rotateY(-38deg) rotateZ(8deg) scale(.9); }
+.filme--ativo .celular__tela { transform: translateZ(1px); }
+.celular__lado { display: none; }
+.filme--ativo .celular__lado { display: block; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+  background: linear-gradient(145deg, #34444c, #0b1418); transform: translateZ(calc(var(--i) * -1.4px)); }
+.filme--ativo .celular__lado:last-child { background: #081013; box-shadow: 0 50px 90px -30px rgb(0 0 0 / .75); }
+
+.filme--ativo.filme--celular .celular { animation: celular3d-surgir 1.4s cubic-bezier(.22, 1, .36, 1) both; }
+.filme--ativo.filme--zoom-icone .celular { animation: celular3d-zoom-icone 1.1s cubic-bezier(.65, 0, .35, 1) both; }
+.filme--ativo.filme--zoom-topo .celular { animation: celular3d-zoom-topo .9s cubic-bezier(.65, 0, .35, 1) both; }
+.filme--ativo.filme--afastar .celular { animation: celular3d-afastar 1.2s cubic-bezier(.65, 0, .35, 1) both,
+  celular3d-balanco 5s 1.2s ease-in-out infinite alternate; }
+
+/* o ícone do WhatsApp "sobe" na tela inicial e recebe um toque com onda */
+.filme--ativo .app--whats { position: relative; transform: scale(0); }
+.filme--ativo.filme--icone .app--whats { animation: celular3d-icone-subir .6s cubic-bezier(.34, 1.56, .64, 1) both; }
+.filme--ativo.filme--toque .app--whats::after { content: ""; position: absolute; inset: -6px; border-radius: 18px;
+  background: rgb(255 255 255 / .55); animation: celular3d-onda .5s ease-out both; }
 
 .filme--ativo .celular__home { opacity: 1; visibility: visible; }
 .filme--ativo.filme--chat .celular__home { pointer-events: none; animation: filme-home-sair .35s cubic-bezier(.22, 1, .36, 1) both; }
-.filme--ativo.filme--toque .app--whats { animation: filme-toque .3s cubic-bezier(.22, 1, .36, 1) both; }
+.filme--ativo.filme--toque .app--whats { animation: filme-toque .3s cubic-bezier(.22, 1, .36, 1) both; transform: scale(1); }
 
 .filme--ativo .celular__chat { opacity: 0; transform: scale(.2); transform-origin: 37% 33%; pointer-events: none; will-change: transform, opacity; }
 .filme--ativo.filme--chat .celular__chat { pointer-events: auto; animation: filme-chat-abrir .58s cubic-bezier(.22, 1, .36, 1) both; }
@@ -118,9 +139,34 @@
   from { opacity: 1; transform: translate(-50%, -50%); }
   to { opacity: 0; transform: translate(-50%, calc(-50% - 24px)); }
 }
-@keyframes filme-celular-entrar {
-  from { opacity: 0; transform: translateY(120px); }
-  to { opacity: 1; transform: none; }
+@keyframes celular3d-surgir {
+  0% { opacity: 0; transform: translate3d(0, 140px, -260px) rotateX(28deg) rotateY(-38deg) rotateZ(8deg) scale(.9); }
+  35% { opacity: 1; }
+  100% { opacity: 1; transform: translate3d(0, 0, 0) rotateX(10deg) rotateY(-20deg) rotateZ(3deg) scale(1); }
+}
+@keyframes celular3d-zoom-icone {
+  from { opacity: 1; transform: translate3d(0, 0, 0) rotateX(10deg) rotateY(-20deg) rotateZ(3deg) scale(1); }
+  to { opacity: 1; transform: translate3d(26.4%, 41.8%, 0) rotateX(4deg) rotateY(-6deg) rotateZ(0deg) scale(2.4); }
+}
+@keyframes celular3d-zoom-topo {
+  from { opacity: 1; transform: translate3d(26.4%, 41.8%, 0) rotateX(4deg) rotateY(-6deg) rotateZ(0deg) scale(2.4); }
+  to { opacity: 1; transform: translate3d(15.2%, 38.8%, 0) rotateX(2deg) rotateY(4deg) rotateZ(0deg) scale(1.9); }
+}
+@keyframes celular3d-afastar {
+  from { opacity: 1; transform: translate3d(15.2%, 38.8%, 0) rotateX(2deg) rotateY(4deg) rotateZ(0deg) scale(1.9); }
+  to { opacity: 1; transform: translate3d(0, 0, 0) rotateX(6deg) rotateY(12deg) rotateZ(-1deg) scale(1); }
+}
+@keyframes celular3d-balanco {
+  from { opacity: 1; transform: translate3d(0, 0, 0) rotateX(6deg) rotateY(12deg) rotateZ(-1deg) scale(1); }
+  to { opacity: 1; transform: translate3d(0, -10px, 0) rotateX(3deg) rotateY(5deg) rotateZ(0deg) scale(1); }
+}
+@keyframes celular3d-icone-subir {
+  0% { transform: translateY(18px) scale(0); }
+  100% { transform: translateY(0) scale(1); }
+}
+@keyframes celular3d-onda {
+  from { opacity: 1; transform: scale(.6); }
+  to { opacity: 0; transform: scale(1.5); }
 }
 @keyframes filme-toque {
   0% { transform: scale(1); }
@@ -177,7 +223,9 @@
 /* com "reduzir movimento", tudo fica imediatamente no estado final parado */
 @media (prefers-reduced-motion: reduce) {
   .filme--ativo .filme__frase { opacity: 0; animation: none; }
-  .filme--ativo .celular { opacity: 1; transform: none; animation: none; }
+  .filme--ativo .celular { opacity: 1; transform: none; animation: none; box-shadow: 0 40px 80px -20px rgb(0 0 0 / .7); }
+  .filme--ativo .celular__lado { display: none; }
+  .filme--ativo .celular__tela { transform: none; }
   .filme--ativo .celular__home { opacity: 0; visibility: hidden; animation: none; }
   .filme--ativo .celular__chat { opacity: 1; transform: none; pointer-events: auto; animation: none; }
   .filme--ativo [data-cena="pergunta"],
