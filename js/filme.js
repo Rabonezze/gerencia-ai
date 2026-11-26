@@ -261,7 +261,7 @@ function configurarFilme() {
 
     promessa3d = (async () => {
       try {
-        const modulo = await import('./filme3d.js?v=6');
+        const modulo = await import('./filme3d.js?v=7');
         if (desmontado || prefereMovimentoReduzido()) return null;
         const instancia = await modulo.criarCena3D(palco);
         if (!instancia || desmontado || prefereMovimentoReduzido()) {
@@ -367,6 +367,7 @@ function configurarRecusa() {
 
   let indicadorAtual = null;
   let jaIniciou = false;
+  let visivel = false;
 
   // Espessura do celular 3D: camadas iguais à moldura, empilhadas para trás (só aparecem com o filme ativo).
   const celular = filme.querySelector('.celular');
@@ -384,6 +385,16 @@ function configurarRecusa() {
   const linhaDoTempo = criarLinhaDoTempo((pausado) => {
     recusa.classList.toggle('recusa--pausada', pausado);
   });
+
+  // O bloco fica com altura fixa (a da conversa completa), para não "pular" a cada repetição.
+  function fixarAltura() {
+    const estavaAtiva = recusa.classList.contains('recusa--ativa');
+    msgs.style.minHeight = '';
+    recusa.classList.remove('recusa--ativa');
+    const altura = msgs.offsetHeight;
+    if (estavaAtiva) recusa.classList.add('recusa--ativa');
+    msgs.style.minHeight = `${altura}px`;
+  }
 
   function removerDigitando() {
     if (indicadorAtual) {
@@ -408,6 +419,7 @@ function configurarRecusa() {
     }
 
     removerDigitando();
+    msgs.classList.remove('recusa__msgs--saindo');
     recusa.classList.add('recusa--ativa');
     pedido.classList.remove('is-visivel');
     bloqueio.classList.remove('is-visivel');
@@ -436,6 +448,16 @@ function configurarRecusa() {
           removerDigitando();
           resposta.classList.add('is-visivel');
         }
+      },
+      // Segura a conversa completa para leitura, some com um fade e recomeça (loop contínuo).
+      {
+        emMs: 8600,
+        acao: () => msgs.classList.add('recusa__msgs--saindo')
+      },
+      {
+        emMs: 9100,
+        // Recomeça depois que este quadro da linha do tempo termina.
+        acao: () => queueMicrotask(reproduzirRecusa)
       }
     ]);
   }
@@ -445,20 +467,36 @@ function configurarRecusa() {
   }
 
   // Esconde os três itens até #recusa ficar 40% visível.
+  fixarAltura();
   recusa.classList.add('recusa--ativa');
+  if ('ResizeObserver' in window) {
+    let larguraAnterior = recusa.clientWidth;
+    new ResizeObserver(() => {
+      if (recusa.clientWidth === larguraAnterior) return;
+      larguraAnterior = recusa.clientWidth;
+      fixarAltura();
+    }).observe(recusa);
+  }
 
   if ('IntersectionObserver' in window) {
     const observador = new IntersectionObserver(
       (entradas) => {
-        const visivel = entradas.some(
+        visivel = entradas.some(
           (entrada) => entrada.isIntersecting && entrada.intersectionRatio >= 0.4
         );
-        if (!visivel || jaIniciou) return;
-        jaIniciou = true;
-        observador.disconnect();
-        reproduzirRecusa();
+        // Roda em loop só enquanto está na tela; fora dela, pausa e continua de onde parou.
+        if (!visivel) {
+          if (jaIniciou) linhaDoTempo.pausar();
+          return;
+        }
+        if (!jaIniciou) {
+          jaIniciou = true;
+          reproduzirRecusa();
+        } else if (!document.hidden) {
+          linhaDoTempo.retomar();
+        }
       },
-      { threshold: [0.4] }
+      { threshold: [0, 0.4] }
     );
     observador.observe(recusa);
   } else {
@@ -466,8 +504,8 @@ function configurarRecusa() {
     reproduzirRecusa();
   }
 
-  // A recusa roda uma vez só: ao voltar para a aba, basta continuar de onde parou.
-  return { linhaDoTempo, resetarParaEstadoFinal };
+  // Ao voltar para a aba do navegador, só retoma se a conversa estiver na tela.
+  return { linhaDoTempo, resetarParaEstadoFinal, deveRetomar: () => visivel };
 }
 
 function iniciarCenas() {

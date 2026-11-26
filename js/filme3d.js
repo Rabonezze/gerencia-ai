@@ -223,26 +223,61 @@ function tracarBalao(ctx, x, y, w, h, rTL, rTR, rBR, rBL) {
 }
 
 // Desenhista da tela em alta resolução (1080 x 2340 px); redesenha só quando o estado muda.
+// Desempenho: a tela usa DOIS canvas fixos (tela inicial e conversa). A abertura em círculo
+// do WhatsApp para a conversa é feita no shader da GPU, misturando as duas texturas, em vez de
+// redesenhar e reenviar a imagem 1080x2340 a cada quadro (era a causa das travadas na transição).
+// A conversa só é redesenhada quando o conteúdo dela muda (balões e digitação).
+function criarTexturaTela(canvasOrigem, anisotropiaMax) {
+  const tex = new THREE.CanvasTexture(canvasOrigem);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.anisotropy = anisotropiaMax;
+  tex.minFilter = THREE.LinearMipmapLinearFilter;
+  tex.magFilter = THREE.LinearFilter;
+  tex.generateMipmaps = true;
+  return tex;
+}
+
 function criarDesenhistaTela(anisotropiaMax) {
   const canvas = document.createElement('canvas');
   canvas.width = CANVAS_W;
   canvas.height = CANVAS_H;
-  const ctx = canvas.getContext('2d');
+  const ctxConversa = canvas.getContext('2d');
 
-  const textura = new THREE.CanvasTexture(canvas);
-  textura.colorSpace = THREE.SRGBColorSpace;
-  textura.anisotropy = anisotropiaMax;
-  textura.minFilter = THREE.LinearMipmapLinearFilter;
-  textura.magFilter = THREE.LinearFilter;
-  textura.generateMipmaps = true;
+  const canvasHome = document.createElement('canvas');
+  canvasHome.width = CANVAS_W;
+  canvasHome.height = CANVAS_H;
+  const ctxHome = canvasHome.getContext('2d');
+
+  // As funções de desenho usam "ctx"; ele aponta para o canvas que está sendo desenhado.
+  let ctx = ctxConversa;
+
+  const textura = criarTexturaTela(canvas, anisotropiaMax);
+  const texturaHome = criarTexturaTela(canvasHome, anisotropiaMax);
+
+  // Parâmetros da mistura no shader (abertura em círculo e mancha sob a logo 3D).
+  const uniformesTela = {
+    uTelaHome: { value: texturaHome },
+    uCentro: { value: new THREE.Vector2() },
+    uRaio: { value: 0 },
+    uAlfa: { value: 0 },
+    uLogoCentro: { value: new THREE.Vector2(LOGO_CX, LOGO_CY) },
+    uLogoRaio: { value: LOGO_RAIO_PX },
+    uCorSpot: { value: new THREE.Color('#0d7480') },
+    // rgba(13, 116, 128, 0.16) sobre o topo #f0f2f5, já composto (mesmo resultado do canvas antigo).
+    uCorSpotFraco: { value: new THREE.Color('#ccdee2') },
+    uSpotFraco: { value: 0 }
+  };
 
   // Coordenada central do ícone do WhatsApp no canvas (para a abertura crescer a partir dele).
   const larguraGrade = GRADE_COLUNAS * GRADE_TAM_PX + (GRADE_COLUNAS - 1) * GRADE_GAP_X;
   const margemEsq = (CANVAS_W - larguraGrade) / 2;
   const whatsCx = margemEsq + WHATS_COL * (GRADE_TAM_PX + GRADE_GAP_X) + GRADE_TAM_PX / 2;
   const whatsCy = GRADE_INICIO_Y + WHATS_LINHA * (GRADE_TAM_PX + GRADE_GAP_Y);
+  uniformesTela.uCentro.value.set(whatsCx, whatsCy);
+  const raioMax = Math.hypot(CANVAS_W, CANVAS_H);
 
   let assinaturaAnterior = '';
+  let homeDesenhada = false;
 
   function desenharBarraStatus(corTexto) {
     ctx.save();
@@ -304,13 +339,8 @@ function criarDesenhistaTela(anisotropiaMax) {
 
     desenharBarraStatus('#111b21');
 
-    // Espaço sutil sob a logo 3D da Gerencia AI (dá apoio visual quando a logo levanta).
-    ctx.save();
-    ctx.beginPath();
-    ctx.arc(LOGO_CX, LOGO_CY, LOGO_RAIO_PX, 0, Math.PI * 2);
-    ctx.fillStyle = estado.logoElevacao > 0.04 ? 'rgba(13, 116, 128, 0.16)' : '#0d7480';
-    ctx.fill();
-    ctx.restore();
+    // O círculo sob a logo 3D da Gerencia AI é desenhado no shader (uCorSpot / uCorSpotFraco),
+    // para a troca de cor quando a logo levanta não exigir reenviar a imagem inteira.
 
     // Nome e status ao lado da logo 3D.
     ctx.save();
@@ -484,41 +514,94 @@ function criarDesenhistaTela(anisotropiaMax) {
   }
 
   function atualizar(estado, forcar = false) {
+    // Tela inicial: desenhada uma única vez (é fixa).
+    if (!homeDesenhada || forcar) {
+      ctx = ctxHome;
+      desenharTelaInicial();
+      ctx = ctxConversa;
+      texturaHome.needsUpdate = true;
+      homeDesenhada = true;
+    }
+
+    // Abertura em círculo a partir do ícone do WhatsApp: só parâmetros do shader, sem redesenhar.
+    const abertura = estado.aberturaChat;
+    if (abertura <= 0.001) {
+      uniformesTela.uRaio.value = 0;
+      uniformesTela.uAlfa.value = 0;
+    } else if (abertura >= 0.999) {
+      uniformesTela.uRaio.value = raioMax * 2;
+      uniformesTela.uAlfa.value = 1;
+    } else {
+      const t = easeInOutCubic(abertura);
+      uniformesTela.uRaio.value = misturar(GRADE_TAM_PX * 0.45, raioMax, t);
+      uniformesTela.uAlfa.value = Math.min(1, t * 2.2);
+    }
+    uniformesTela.uSpotFraco.value = estado.logoElevacao > 0.04 ? 1 : 0;
+
+    // Conversa: redesenha só quando o conteúdo muda (digitação, balões, "digitando...").
     const faseQuant = estado.mostrandoDigitando ? Math.floor(estado.faseDigitando * 18) : 0;
     const assinatura = [
-      estado.aberturaChat.toFixed(3),
       estado.textoDigitando,
       estado.progressoPergunta.toFixed(2),
       estado.mostrandoDigitando ? `1:${faseQuant}` : '0',
-      estado.progressoResposta.toFixed(2),
-      estado.logoElevacao > 0.04 ? '1' : '0'
+      estado.progressoResposta.toFixed(2)
     ].join('|');
 
     if (!forcar && assinatura === assinaturaAnterior) return;
     assinaturaAnterior = assinatura;
 
-    if (estado.aberturaChat <= 0.001) {
-      desenharTelaInicial();
-    } else if (estado.aberturaChat >= 0.999) {
-      desenharConversa(estado);
-    } else {
-      desenharTelaInicial();
-      const t = easeInOutCubic(estado.aberturaChat);
-      const raioMax = Math.hypot(CANVAS_W, CANVAS_H);
-      const raioAtual = misturar(GRADE_TAM_PX * 0.45, raioMax, t);
-      ctx.save();
-      ctx.beginPath();
-      ctx.arc(whatsCx, whatsCy, raioAtual, 0, Math.PI * 2);
-      ctx.clip();
-      ctx.globalAlpha = Math.min(1, t * 2.2);
-      desenharConversa(estado);
-      ctx.restore();
-    }
-
+    desenharConversa(estado);
     textura.needsUpdate = true;
   }
 
-  return { textura, atualizar, whatsCx, whatsCy };
+  // Liga a mistura das duas telas no material da tela do celular.
+  function aplicarNoMaterial(material) {
+    material.onBeforeCompile = (shader) => {
+      Object.assign(shader.uniforms, uniformesTela);
+      shader.fragmentShader = shader.fragmentShader
+        .replace(
+          '#include <common>',
+          `#include <common>
+uniform sampler2D uTelaHome;
+uniform vec2 uCentro;
+uniform float uRaio;
+uniform float uAlfa;
+uniform vec2 uLogoCentro;
+uniform float uLogoRaio;
+uniform vec3 uCorSpot;
+uniform vec3 uCorSpotFraco;
+uniform float uSpotFraco;
+// Mistura feita em sRGB, como o canvas 2D fazia antes (fica idêntico ao filme original).
+vec3 telaParaSrgb( vec3 c ) {
+  return mix( c * 12.92, pow( c, vec3( 1.0 / 2.4 ) ) * 1.055 - 0.055, step( vec3( 0.0031308 ), c ) );
+}
+vec3 telaParaLinear( vec3 c ) {
+  return mix( c / 12.92, pow( ( c + 0.055 ) / 1.055, vec3( 2.4 ) ), step( vec3( 0.04045 ), c ) );
+}`
+        )
+        .replace(
+          '#include <map_fragment>',
+          `vec2 pxTela = vec2( vMapUv.x * ${CANVAS_W.toFixed(1)}, ( 1.0 - vMapUv.y ) * ${CANVAS_H.toFixed(1)} );
+vec3 conversaS = telaParaSrgb( texture2D( map, vMapUv ).rgb );
+vec3 homeS = telaParaSrgb( texture2D( uTelaHome, vMapUv ).rgb );
+float mLogo = 1.0 - smoothstep( uLogoRaio - 1.2, uLogoRaio + 1.2, distance( pxTela, uLogoCentro ) );
+float dentro = 1.0 - smoothstep( uRaio - 1.2, uRaio + 1.2, distance( pxTela, uCentro ) );
+float a = dentro * uAlfa;
+// Reproduz o desenho antigo: cada camada da conversa era pintada com transparência "a" por cima
+// da anterior (1º o fundo bege, depois topo, barra, textos e o círculo da logo).
+const vec3 fundoConversaS = vec3( 239.0, 234.0, 226.0 ) / 255.0;
+vec3 dif = abs( conversaS - fundoConversaS );
+float foraDoFundo = smoothstep( 1.5 / 255.0, 4.0 / 255.0, max( dif.r, max( dif.g, dif.b ) ) );
+vec3 corS = mix( mix( homeS, fundoConversaS, a ), conversaS, a * foraDoFundo );
+corS = mix( corS, telaParaSrgb( mix( uCorSpot, uCorSpotFraco, uSpotFraco ) ), a * mLogo );
+diffuseColor *= vec4( telaParaLinear( corS ), 1.0 );`
+        );
+    };
+    material.customProgramCacheKey = () => 'gerencia-tela-mistura';
+    material.needsUpdate = true;
+  }
+
+  return { textura, texturaHome, atualizar, aplicarNoMaterial, whatsCx, whatsCy };
 }
 
 // Extruda um SVG em um grupo 3D centralizado, ajustado à largura alvo e com espessura exata.
@@ -828,7 +911,7 @@ async function criarFrase3D() {
 }
 
 // Monta a estrutura completa do celular 3D genérico (sem marca, com volume, botões e câmeras).
-function construirCorpoCelular(texturaTela) {
+function construirCorpoCelular(tela) {
   const grupoCelular = new THREE.Group();
 
   // Corpo metálico escuro com cantos e laterais bem arredondados.
@@ -863,9 +946,10 @@ function construirCorpoCelular(texturaTela) {
   // Tela ativa em alta resolução (cores fiéis, sem escurecer sob o tone mapping).
   const geomTela = criarGeometriaTelaArredondada(TELA_W, TELA_H, TELA_R);
   const matTela = new THREE.MeshBasicMaterial({
-    map: texturaTela,
+    map: tela.textura,
     toneMapped: false
   });
+  tela.aplicarNoMaterial(matTela);
   const telaMesh = new THREE.Mesh(geomTela, matTela);
   telaMesh.position.z = TELA_Z;
   grupoCelular.add(telaMesh);
@@ -1028,7 +1112,11 @@ export async function criarCena3D(palco) {
     return null;
   }
 
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  // Aparelhos mais fracos (até 4 núcleos ou 4 GB) usam resolução um pouco menor: mais quadros por segundo.
+  const aparelhoFraco =
+    (navigator.hardwareConcurrency || 8) <= 4 || (navigator.deviceMemory || 8) <= 4;
+  const limitePixels = aparelhoFraco ? 1.5 : 2;
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, limitePixels));
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.08;
   renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -1083,7 +1171,7 @@ export async function criarCena3D(palco) {
     true
   );
 
-  const grupoCelular = construirCorpoCelular(tela.textura);
+  const grupoCelular = construirCorpoCelular(tela);
   grupoCelular.visible = false;
   cena.add(grupoCelular);
 
@@ -1212,6 +1300,32 @@ export async function criarCena3D(palco) {
   sombraLogo.position.set(posLogo.x, posLogo.y - 0.01, TELA_Z + 0.0015);
   sombraLogo.visible = false;
   grupoCelular.add(sombraLogo);
+
+  // Prepara na GPU, antes do filme, todos os materiais e texturas (inclusive os que só aparecem
+  // no meio, como a logo, a onda do toque e a frase). Sem isso, cada peça era preparada no quadro
+  // em que surgia pela primeira vez, causando pequenas travadas.
+  const visibilidadeOriginal = [];
+  cena.traverse((obj) => {
+    visibilidadeOriginal.push([obj, obj.visible]);
+    obj.visible = true;
+    const lista = obj.material ? (Array.isArray(obj.material) ? obj.material : [obj.material]) : [];
+    lista.forEach((mat) => {
+      if (mat.map) renderer.initTexture(mat.map);
+    });
+  });
+  renderer.initTexture(tela.texturaHome);
+  try {
+    if (renderer.compileAsync) {
+      await renderer.compileAsync(cena, camera);
+    } else {
+      renderer.compile(cena, camera);
+    }
+  } catch {
+    // Se a pré-compilação falhar, os materiais são preparados no primeiro uso, como antes.
+  }
+  visibilidadeOriginal.forEach(([obj, visivel]) => {
+    obj.visible = visivel;
+  });
 
   // Insere o canvas no palco (atrás da frase HTML fallback e dos cartões HTML).
   palco.prepend(canvas);
@@ -1395,7 +1509,7 @@ export async function criarCena3D(palco) {
   function redimensionar() {
     larguraPalco = Math.max(palco.clientWidth, 320);
     alturaPalco = Math.max(palco.clientHeight, 320);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, limitePixels));
     renderer.setSize(larguraPalco, alturaPalco, false);
     camera.aspect = larguraPalco / alturaPalco;
     camera.updateProjectionMatrix();
@@ -1640,6 +1754,7 @@ export async function criarCena3D(palco) {
 
     geometrias.forEach((g) => g.dispose());
     materiais.forEach((m) => m.dispose());
+    texturas.add(tela.texturaHome);
     texturas.forEach((t) => t.dispose());
     alvoAmbiente.dispose();
     renderer.dispose();

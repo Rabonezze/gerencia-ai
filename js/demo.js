@@ -1,11 +1,13 @@
-// GerencIA: simulador da conversa no WhatsApp e modo ao vivo da seção #demo.
+// Gerencia AI: demonstração em loop automático no WhatsApp e modo ao vivo (#demo).
 
 const CHAVE_STORAGE = 'gerencia-api-key';
 const MAX_MENSAGENS = 12;
 const MAX_PERGUNTA = 300;
-const MAX_LINHAS_TABELA = 15;
 const TEMPO_SAUDE_MS = 3000;
 const TEMPO_ERRO_SWITCH_MS = 4000;
+const TEMPO_DIGITANDO_LOOP_MS = 1200;
+const TEMPO_LEITURA_LOOP_MS = 4000;
+const TEMPO_CICLO_ABA_MS = TEMPO_DIGITANDO_LOOP_MS + TEMPO_LEITURA_LOOP_MS;
 
 function formatarHoraAtual() {
   const agora = new Date();
@@ -56,13 +58,6 @@ function criarBalaoBotHtml(htmlSeguro) {
   return balao;
 }
 
-function criarLinhaConsulta(texto) {
-  const linha = document.createElement('div');
-  linha.className = 'wa-tool';
-  linha.textContent = texto;
-  return linha;
-}
-
 function criarIndicadorDigitando() {
   const indicador = document.createElement('div');
   indicador.className = 'wa-typing';
@@ -73,64 +68,12 @@ function criarIndicadorDigitando() {
   return indicador;
 }
 
-function temListaDeObjetos(dados) {
-  return (
-    Array.isArray(dados) &&
-    dados.length > 0 &&
-    dados[0] !== null &&
-    typeof dados[0] === 'object' &&
-    !Array.isArray(dados[0]) &&
-    Object.keys(dados[0]).length > 0
-  );
-}
-
-// Colunas de dinheiro (pelo nome que vem do banco) aparecem como R$ 1.234,56; outros números no padrão brasileiro.
-const COLUNA_MONETARIA = /faturamento|valor|total|pre[cç]o|lucro|receita|custo|subtotal|ticket/i;
-
-function formatarCelula(coluna, valor) {
-  if (valor == null) return '';
-  if (typeof valor === 'number' && Number.isFinite(valor)) {
-    if (COLUNA_MONETARIA.test(coluna)) {
-      return valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+function limparMensagens(corpoConversa) {
+  [...corpoConversa.children].forEach((el) => {
+    if (!el.classList.contains('wa__day')) {
+      el.remove();
     }
-    return valor.toLocaleString('pt-BR', { maximumFractionDigits: 2 });
-  }
-  return String(valor);
-}
-
-// "faturamento_total" -> "Faturamento total"
-function rotuloColuna(coluna) {
-  const texto = String(coluna).replace(/_/g, ' ').trim();
-  return texto.charAt(0).toUpperCase() + texto.slice(1);
-}
-
-function criarTabelaDados(dados) {
-  const colunas = Object.keys(dados[0]);
-  const tabela = document.createElement('table');
-
-  const cabecalho = document.createElement('thead');
-  const linhaCabecalho = document.createElement('tr');
-  colunas.forEach((coluna) => {
-    const th = document.createElement('th');
-    th.textContent = rotuloColuna(coluna);
-    linhaCabecalho.append(th);
   });
-  cabecalho.append(linhaCabecalho);
-
-  const corpo = document.createElement('tbody');
-  dados.slice(0, MAX_LINHAS_TABELA).forEach((item) => {
-    const tr = document.createElement('tr');
-    colunas.forEach((coluna) => {
-      const td = document.createElement('td');
-      const valor = item && typeof item === 'object' ? item[coluna] : '';
-      td.textContent = formatarCelula(coluna, valor);
-      tr.append(td);
-    });
-    corpo.append(tr);
-  });
-
-  tabela.append(cabecalho, corpo);
-  return tabela;
 }
 
 function limitarMensagens(corpoConversa) {
@@ -166,30 +109,24 @@ function iniciarDemo() {
   const abas = [...secaoDemo.querySelectorAll('button.tab[role="tab"][data-cena]')];
   const waBody = secaoDemo.querySelector('#wa-body');
   const interruptor = secaoDemo.querySelector('#modo-ao-vivo');
-  // o modo ao vivo fala com a API do seu computador: na versão publicada, o botão fica escondido
   const noComputadorLocal = ['localhost', '127.0.0.1', '[::1]'].includes(location.hostname);
   if (interruptor && !noComputadorLocal) interruptor.hidden = true;
+
   const waForm = secaoDemo.querySelector('#wa-form');
   const waPergunta = secaoDemo.querySelector('#wa-pergunta');
   const botaoEnviar = waForm?.querySelector('button[type="submit"]');
-  const painelAoVivo = secaoDemo.querySelector('#painel-ao-vivo');
-  const painelAoVivoSql = secaoDemo.querySelector('#painel-ao-vivo-sql');
-  const painelAoVivoDados = secaoDemo.querySelector('#painel-ao-vivo-dados');
-  const paineisDemo = [...secaoDemo.querySelectorAll('.tras__cena[role="tabpanel"]')];
 
-  if (
-    !waBody ||
-    !interruptor ||
-    !waForm ||
-    !waPergunta ||
-    !painelAoVivo ||
-    !painelAoVivoSql ||
-    !painelAoVivoDados
-  ) {
-    return;
-  }
+  if (!waBody || !abas.length || !interruptor || !waForm || !waPergunta) return;
 
-  let animacaoAtual = null;
+  let indiceAtual = 0;
+  let secaoVisivel = false;
+  let jaIniciouLoop = false;
+  let faseLoop = 'parado'; // 'parado' | 'digitando' | 'leitura'
+  let acumuladoFaseMs = 0;
+  let ultimoFrameTs = null;
+  let idRaf = null;
+  let indicadorLoop = null;
+
   let controladorSaude = null;
   let controladorPergunta = null;
   let indicadorAoVivo = null;
@@ -199,14 +136,161 @@ function iniciarDemo() {
     return interruptor.getAttribute('aria-checked') === 'true';
   }
 
-  function cancelarAnimacao() {
-    if (!animacaoAtual) return;
-    animacaoAtual.cancelada = true;
-    animacaoAtual.timers.forEach((id) => clearTimeout(id));
-    animacaoAtual.timers.clear();
-    animacaoAtual.elementos.forEach((el) => el.remove());
-    animacaoAtual.elementos.length = 0;
-    animacaoAtual = null;
+  function atualizarAbaSelecionada(indice) {
+    abas.forEach((aba, i) => {
+      const ativa = i === indice;
+      aba.setAttribute('aria-selected', String(ativa));
+      aba.tabIndex = ativa ? 0 : -1;
+      if (!ativa) {
+        aba.style.setProperty('--tab-prog', '0');
+      }
+    });
+  }
+
+  function definirProgressoAba(indice, progresso) {
+    const aba = abas[indice];
+    if (!aba) return;
+    const valor = Math.max(0, Math.min(1, progresso));
+    aba.style.setProperty('--tab-prog', valor.toFixed(4));
+  }
+
+  function cancelarRaf() {
+    if (idRaf !== null) {
+      cancelAnimationFrame(idRaf);
+      idRaf = null;
+    }
+    ultimoFrameTs = null;
+  }
+
+  function removerIndicadorLoop() {
+    if (indicadorLoop && indicadorLoop.isConnected) {
+      indicadorLoop.remove();
+    }
+    indicadorLoop = null;
+  }
+
+  function mostrarCenaImediata(indice, limparAntes = true) {
+    cancelarRaf();
+    removerIndicadorLoop();
+    faseLoop = 'parado';
+    acumuladoFaseMs = 0;
+    indiceAtual = indice;
+    atualizarAbaSelecionada(indice);
+    definirProgressoAba(indice, 0);
+
+    const aba = abas[indice];
+    const cena = dadosDemo.cenas?.[aba?.dataset.cena];
+    if (!cena) return;
+
+    if (limparAntes) {
+      limparMensagens(waBody);
+    }
+    adicionarElemento(waBody, criarBalaoUsuario(cena.pergunta));
+    adicionarElemento(waBody, criarBalaoBotHtml(cena.resposta));
+  }
+
+  function iniciarCenaLoop(indice, limparAntes = false) {
+    if (prefereMovimentoReduzido()) {
+      mostrarCenaImediata(indice, true);
+      return;
+    }
+
+    cancelarRaf();
+    removerIndicadorLoop();
+    indiceAtual = indice;
+    jaIniciouLoop = true;
+
+    const aba = abas[indice];
+    const cena = dadosDemo.cenas?.[aba?.dataset.cena];
+    if (!cena) return;
+
+    if (limparAntes || indice === 0) {
+      limparMensagens(waBody);
+    }
+
+    atualizarAbaSelecionada(indice);
+    definirProgressoAba(indice, 0);
+
+    adicionarElemento(waBody, criarBalaoUsuario(cena.pergunta));
+    indicadorLoop = criarIndicadorDigitando();
+    adicionarElemento(waBody, indicadorLoop);
+
+    faseLoop = 'digitando';
+    acumuladoFaseMs = 0;
+    ultimoFrameTs = null;
+    garantirRaf();
+  }
+
+  function passoRaf(agora) {
+    idRaf = null;
+    if (!podeRodarLoop()) {
+      ultimoFrameTs = null;
+      return;
+    }
+
+    if (ultimoFrameTs === null) {
+      ultimoFrameTs = agora;
+    }
+    const delta = Math.min(120, Math.max(0, agora - ultimoFrameTs));
+    ultimoFrameTs = agora;
+    acumuladoFaseMs += delta;
+
+    const aba = abas[indiceAtual];
+    const cena = dadosDemo.cenas?.[aba?.dataset.cena];
+    if (!cena) return;
+
+    if (faseLoop === 'digitando') {
+      const decorridoTotal = Math.min(TEMPO_DIGITANDO_LOOP_MS, acumuladoFaseMs);
+      definirProgressoAba(indiceAtual, decorridoTotal / TEMPO_CICLO_ABA_MS);
+
+      if (acumuladoFaseMs >= TEMPO_DIGITANDO_LOOP_MS) {
+        const resposta = criarBalaoBotHtml(cena.resposta);
+        if (indicadorLoop && indicadorLoop.isConnected) {
+          trocarElemento(waBody, indicadorLoop, resposta);
+        } else {
+          adicionarElemento(waBody, resposta);
+        }
+        indicadorLoop = null;
+        faseLoop = 'leitura';
+        acumuladoFaseMs = 0;
+      }
+    } else if (faseLoop === 'leitura') {
+      const decorridoTotal =
+        TEMPO_DIGITANDO_LOOP_MS + Math.min(TEMPO_LEITURA_LOOP_MS, acumuladoFaseMs);
+      definirProgressoAba(indiceAtual, decorridoTotal / TEMPO_CICLO_ABA_MS);
+
+      if (acumuladoFaseMs >= TEMPO_LEITURA_LOOP_MS) {
+        const proximoIndice = (indiceAtual + 1) % abas.length;
+        iniciarCenaLoop(proximoIndice, proximoIndice === 0);
+        return;
+      }
+    }
+
+    garantirRaf();
+  }
+
+  function podeRodarLoop() {
+    return (
+      secaoVisivel &&
+      !document.hidden &&
+      !modoAoVivoLigado() &&
+      !controladorSaude &&
+      !prefereMovimentoReduzido()
+    );
+  }
+
+  function garantirRaf() {
+    if (!podeRodarLoop()) {
+      cancelarRaf();
+      return;
+    }
+    if (!jaIniciouLoop || faseLoop === 'parado') {
+      iniciarCenaLoop(indiceAtual, true);
+      return;
+    }
+    if (idRaf === null) {
+      idRaf = requestAnimationFrame(passoRaf);
+    }
   }
 
   function limparErroInterruptor() {
@@ -224,72 +308,7 @@ function iniciarDemo() {
     }, TEMPO_ERRO_SWITCH_MS);
   }
 
-  function mostrarPainelAbaAtiva(abaPreferida) {
-    const abaAtiva =
-      abaPreferida ||
-      secaoDemo.querySelector('button.tab[role="tab"][aria-selected="true"]');
-    const idPainel = abaAtiva?.getAttribute('aria-controls');
-
-    paineisDemo.forEach((painel) => {
-      painel.hidden = painel.id !== idPainel;
-    });
-  }
-
-  // Modo demonstração: reproduz pergunta, consulta, digitando e resposta da aba escolhida.
-  function reproduzirCena(nomeCena) {
-    const cena = dadosDemo.cenas?.[nomeCena];
-    if (!cena) return;
-
-    cancelarAnimacao();
-
-    const balaoPergunta = criarBalaoUsuario(cena.pergunta);
-    if (prefereMovimentoReduzido()) {
-      adicionarElemento(waBody, balaoPergunta);
-      adicionarElemento(waBody, criarBalaoBotHtml(cena.resposta));
-      return;
-    }
-
-    const animacao = { cancelada: false, timers: new Set(), elementos: [] };
-    animacaoAtual = animacao;
-
-    const agendar = (fn, atraso) => {
-      const id = setTimeout(() => {
-        animacao.timers.delete(id);
-        if (animacao.cancelada) return;
-        fn();
-      }, atraso);
-      animacao.timers.add(id);
-    };
-
-    adicionarElemento(waBody, balaoPergunta);
-    animacao.elementos.push(balaoPergunta);
-
-    const { antesDaConsulta, consulta, digitando } = dadosDemo.tempos;
-
-    agendar(() => {
-      const linhaConsulta = criarLinhaConsulta(cena.consulta);
-      adicionarElemento(waBody, linhaConsulta);
-      animacao.elementos.push(linhaConsulta);
-
-      agendar(() => {
-        const indicadorDigitando = criarIndicadorDigitando();
-        trocarElemento(waBody, linhaConsulta, indicadorDigitando);
-        animacao.elementos = [balaoPergunta, indicadorDigitando];
-
-        agendar(() => {
-          const balaoResposta = criarBalaoBotHtml(cena.resposta);
-          trocarElemento(waBody, indicadorDigitando, balaoResposta);
-          animacao.elementos.length = 0;
-          if (animacaoAtual === animacao) {
-            animacaoAtual = null;
-          }
-        }, digitando);
-      }, consulta);
-    }, antesDaConsulta);
-  }
-
-  // Modo ao vivo: desliga o interruptor, esconde o campo/tabela e volta ao painel da aba ativa.
-  function desligarModoAoVivo(abaPreferida) {
+  function desligarModoAoVivo(indicePreferido = indiceAtual) {
     if (controladorSaude) {
       controladorSaude.abort();
       controladorSaude = null;
@@ -304,15 +323,18 @@ function iniciarDemo() {
     }
 
     interruptor.setAttribute('aria-checked', 'false');
+    secaoDemo.removeAttribute('data-ao-vivo');
     waForm.hidden = true;
     if (botaoEnviar) botaoEnviar.disabled = false;
-    painelAoVivo.hidden = true;
-    mostrarPainelAbaAtiva(abaPreferida);
+
+    iniciarCenaLoop(indicePreferido, true);
   }
 
-  // Modo ao vivo: pede a chave uma vez, testa a saúde da API local e habilita o formulário.
   async function ligarModoAoVivo() {
-    cancelarAnimacao();
+    cancelarRaf();
+    removerIndicadorLoop();
+    faseLoop = 'parado';
+    definirProgressoAba(indiceAtual, 0);
     limparErroInterruptor();
 
     let chave = sessionStorage.getItem(CHAVE_STORAGE);
@@ -322,6 +344,7 @@ function iniciarDemo() {
       );
       if (digitada === null || !digitada.trim()) {
         interruptor.setAttribute('aria-checked', 'false');
+        garantirRaf();
         return;
       }
       chave = digitada.trim();
@@ -329,6 +352,7 @@ function iniciarDemo() {
     }
 
     interruptor.setAttribute('aria-checked', 'true');
+    secaoDemo.setAttribute('data-ao-vivo', 'true');
 
     const controlador = new AbortController();
     controladorSaude = controlador;
@@ -360,6 +384,7 @@ function iniciarDemo() {
     } catch {
       if (controladorSaude !== controlador && !expirou) return;
       interruptor.setAttribute('aria-checked', 'false');
+      secaoDemo.removeAttribute('data-ao-vivo');
       waForm.hidden = true;
       marcarErroInterruptor();
       adicionarElemento(
@@ -373,10 +398,12 @@ function iniciarDemo() {
       if (controladorSaude === controlador) {
         controladorSaude = null;
       }
+      if (!modoAoVivoLigado()) {
+        garantirRaf();
+      }
     }
   }
 
-  // Modo ao vivo: envia pergunta livre para a API local e exibe resposta + tabela de dados.
   async function enviarPerguntaAoVivo(evento) {
     evento.preventDefault();
     if (!modoAoVivoLigado() || controladorPergunta) return;
@@ -434,23 +461,6 @@ function iniciarDemo() {
       const htmlResposta = escaparEFormatarWhatsapp(corpo.resposta);
       trocarElemento(waBody, digitando, criarBalaoBotHtml(htmlResposta));
       indicadorAoVivo = null;
-
-      const sqlTexto = typeof corpo.sql === 'string' ? corpo.sql.trim() : '';
-      const temDados = temListaDeObjetos(corpo.dados);
-
-      if (sqlTexto || temDados) {
-        painelAoVivoSql.textContent = sqlTexto;
-        if (temDados) {
-          const tabela = criarTabelaDados(corpo.dados);
-          painelAoVivoDados.replaceChildren(tabela);
-        } else {
-          painelAoVivoDados.textContent = 'A consulta não retornou linhas.';
-        }
-        paineisDemo.forEach((painel) => {
-          painel.hidden = true;
-        });
-        painelAoVivo.hidden = false;
-      }
     } catch {
       if (controladorPergunta !== controlador && !expirou) return;
       const aviso = criarBalaoBotTexto(
@@ -471,24 +481,53 @@ function iniciarDemo() {
     }
   }
 
-  abas.forEach((aba) => {
+  abas.forEach((aba, indice) => {
     aba.addEventListener('click', () => {
       if (modoAoVivoLigado() || controladorSaude) {
-        desligarModoAoVivo(aba);
+        desligarModoAoVivo(indice);
+        return;
       }
-      reproduzirCena(aba.dataset.cena);
+      iniciarCenaLoop(indice, true);
     });
   });
 
   interruptor.addEventListener('click', () => {
     if (modoAoVivoLigado() || controladorSaude) {
-      desligarModoAoVivo();
+      desligarModoAoVivo(indiceAtual);
     } else {
       ligarModoAoVivo();
     }
   });
 
   waForm.addEventListener('submit', enviarPerguntaAoVivo);
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+      cancelarRaf();
+    } else {
+      garantirRaf();
+    }
+  });
+
+  if ('IntersectionObserver' in window) {
+    const observerDemo = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          secaoVisivel = entry.isIntersecting;
+          if (secaoVisivel) {
+            garantirRaf();
+          } else {
+            cancelarRaf();
+          }
+        });
+      },
+      { threshold: 0.15 }
+    );
+    observerDemo.observe(secaoDemo);
+  } else {
+    secaoVisivel = true;
+    garantirRaf();
+  }
 }
 
 if (document.readyState === 'loading') {

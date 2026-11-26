@@ -32,8 +32,8 @@
   --display-tracking-xl: -0.04em;
 }
 </style>
-<link rel="stylesheet" href="css/vitrine.css">
-<link rel="stylesheet" href="css/filme.css?v=6">
+<link rel="stylesheet" href="css/vitrine.css?v=7">
+<link rel="stylesheet" href="css/filme.css?v=7">
 <script type="importmap">
 {
   "imports": {
@@ -76,9 +76,9 @@
     <div class="abertura__fundo" aria-hidden="true"></div>
     <div class="wrap abertura__texto">
       <p class="selo"><span class="selo__ponto" aria-hidden="true"></span>Somente leitura: seus dados nunca são alterados</p>
-      <h1 id="hero-h">Gestão do seu mercado pelo WhatsApp</h1>
+      <h1 id="hero-h" aria-label="Gestão do seu mercado pelo WhatsApp"><span class="abertura__palavra" style="--i:0" aria-hidden="true">Gestão</span> <span class="abertura__palavra" style="--i:1" aria-hidden="true">do</span> <span class="abertura__palavra" style="--i:2" aria-hidden="true">seu</span> <span class="abertura__palavra" style="--i:3" aria-hidden="true">mercado</span> <span class="abertura__palavra" style="--i:4" aria-hidden="true">pelo</span> <span class="abertura__palavra" style="--i:5" aria-hidden="true">WhatsApp</span></h1>
       <p class="abertura__lead">Respostas precisas, com os números reais da sua loja, numa conversa. A Gerencia AI consulta o sistema com acesso somente de leitura e nunca apaga ou altera nada.</p>
-      <div class="btn-row"><a class="btn btn--primary" href="#contato">Pedir um orçamento<svg class="m-arrow" viewBox="0 0 12 12" aria-hidden="true"><path class="m-arrow__stem" d="M1 6h8"/><path class="m-arrow__head" d="M4.5 2.5 8 6l-3.5 3.5"/></svg></a><a class="btn btn--secondary" href="#demo">Testar a demonstração</a></div>
+      <div class="btn-row"><a class="btn btn--primary" href="#contato">Pedir um orçamento<svg class="m-arrow" viewBox="0 0 12 12" aria-hidden="true"><path class="m-arrow__stem" d="M1 6h8"/><path class="m-arrow__head" d="M4.5 2.5 8 6l-3.5 3.5"/></svg></a><a class="btn btn--secondary" href="#demo">Ver a demonstração</a></div>
     </div>
 
     <!-- FILME:INICIO (o Antigravity anima este bloco com js/filme.js e css/filme.css; sem script ele mostra a cena final parada) -->
@@ -132,12 +132,12 @@
           <div class="planilha" aria-hidden="true">
             <div class="planilha__barra"><i></i><i></i><i></i><span>relatorio_vendas_novembro.xlsx</span></div>
             <div class="planilha__grade">
-              <span class="h">Produto</span><span class="h">Qtd</span><span class="h">Total</span><span class="h">?</span>
-              <span>Arroz 5kg</span><span>50</span><span>1.345,00</span><span class="x">#REF!</span>
-              <span>Café 500g</span><span>51</span><span>1.014,90</span><span></span>
-              <span>Patinho</span><span>19,2</span><span>802,98</span><span class="x">???</span>
-              <span>Sabão 1,6kg</span><span>41</span><span>799,09</span><span></span>
-              <span>Suco 1L</span><span>54</span><span>642,60</span><span></span>
+              <div class="planilha__linha" style="--i:0"><span class="h">Produto</span><span class="h">Qtd</span><span class="h">Total</span><span class="h">?</span></div>
+              <div class="planilha__linha" style="--i:1"><span>Arroz 5kg</span><span>50</span><span>1.345,00</span><span class="x">#REF!</span></div>
+              <div class="planilha__linha" style="--i:2"><span>Café 500g</span><span>51</span><span>1.014,90</span><span></span></div>
+              <div class="planilha__linha" style="--i:3"><span>Patinho</span><span>19,2</span><span>802,98</span><span class="x">???</span></div>
+              <div class="planilha__linha" style="--i:4"><span>Sabão 1,6kg</span><span>41</span><span>799,09</span><span></span></div>
+              <div class="planilha__linha" style="--i:5"><span>Suco 1L</span><span>54</span><span>642,60</span><span></span></div>
             </div>
           </div>
         </article>
@@ -155,114 +155,49 @@
     </div>
   </section>
 
-  <!-- DEMONSTRAÇÃO: a conversa e, ao lado, o que aconteceu por trás da resposta -->
+  <!-- DEMONSTRAÇÃO: conversa centralizada passando sozinha pelos exemplos -->
   <section class="secao secao--clara" id="demo" aria-labelledby="demo-h">
     <div class="wrap">
       <div class="secao__cabeca secao__cabeca--split">
         <div>
           <p class="rotulo">Demonstração</p>
-          <h2 id="demo-h">Veja de onde vem cada número</h2>
+          <h2 id="demo-h">Veja a Gerencia AI respondendo</h2>
         </div>
-        <p class="secao__lead">Escolha uma pergunta. A resposta chega na conversa e, ao lado, você vê a consulta conferida e os dados exatos que a Gerencia AI usou. Nada é inventado.</p>
-      </div>
-      <div class="demo-bar">
-        <div class="tabs" role="tablist" aria-label="Perguntas de exemplo">
-          <button class="tab" type="button" role="tab" id="tab-estoque" data-cena="estoque" aria-controls="painel-estoque" aria-selected="true">Estoque baixo</button>
-          <button class="tab" type="button" role="tab" id="tab-faturamento" data-cena="faturamento" aria-controls="painel-faturamento" aria-selected="false">Faturamento</button>
-          <button class="tab" type="button" role="tab" id="tab-vendidos" data-cena="vendidos" aria-controls="painel-vendidos" aria-selected="false">Mais vendidos</button>
-          <button class="tab" type="button" role="tab" id="tab-pagamentos" data-cena="pagamentos" aria-controls="painel-pagamentos" aria-selected="false">Pagamentos</button>
-        </div>
-        <button class="demo-switch" type="button" role="switch" aria-checked="false" id="modo-ao-vivo"><span class="demo-switch__knob" aria-hidden="true"></span>Modo ao vivo</button>
+        <p class="secao__lead">Perguntas de verdade, respondidas com os números do sistema da loja. A conversa passa sozinha pelos exemplos.</p>
       </div>
 
-      <div class="ui ui-app app">
-        <div class="app__pane app__pane--list wa" aria-label="Conversa com a Gerencia AI no WhatsApp">
-          <div class="wa__head"><span class="wa-av">G</span><span class="wa__who"><b>Gerencia AI</b><span>online</span></span><img class="wa__logo" src="assets/icons/whatsapp.svg" alt="WhatsApp" width="24" height="24"></div>
-          <div class="wa__body" id="wa-body" aria-live="polite">
-            <div class="wa__day">Hoje</div>
-            <div class="wa-msg wa-msg--me">O que está com estoque baixo?<small>07:41</small></div>
-            <div class="wa-msg wa-msg--bot">5 produtos estão abaixo do mínimo:<br>• <b>Café Torrado e Moído 500g</b>: 6 un (mínimo 15)<br>• <b>Linguiça Toscana Frescal</b>: 4,2 kg (mínimo 10)<br>• <b>Feijão Carioca 1kg</b>: 10 un (mínimo 20)<br>• <b>Cerveja Pilsen Lata 350ml</b>: 18 un (mínimo 36)<br>• <b>Bolo de Cenoura com Cobertura</b>: 3 un (mínimo 6)<small>07:41</small></div>
+      <div class="demo-palco">
+        <div class="demo-bar">
+          <div class="tabs" role="tablist" aria-label="Perguntas de exemplo">
+            <button class="tab" type="button" role="tab" id="tab-estoque" data-cena="estoque" aria-selected="true">Estoque baixo</button>
+            <button class="tab" type="button" role="tab" id="tab-faturamento" data-cena="faturamento" aria-selected="false">Faturamento</button>
+            <button class="tab" type="button" role="tab" id="tab-vendidos" data-cena="vendidos" aria-selected="false">Mais vendidos</button>
+            <button class="tab" type="button" role="tab" id="tab-pagamentos" data-cena="pagamentos" aria-selected="false">Pagamentos</button>
           </div>
-          <form class="wa__input" id="wa-form" autocomplete="off" hidden>
-            <label class="wa__label" for="wa-pergunta">Sua pergunta para a API local</label>
-            <input id="wa-pergunta" name="pergunta" type="text">
-            <button class="wa__send" type="submit" aria-label="Enviar pergunta"><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M2.5 8h10M8.5 3.5 13 8l-4.5 4.5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
-          </form>
+          <button class="demo-switch" type="button" role="switch" aria-checked="false" id="modo-ao-vivo"><span class="demo-switch__knob" aria-hidden="true"></span>Modo ao vivo</button>
         </div>
 
-        <div class="app__pane app__pane--open tras">
-          <div class="tras__head"><b>Por trás da resposta</b><span class="tag-leitura">Somente leitura</span></div>
+        <div class="demo-selo-linha">
+          <span class="tag-leitura">Somente leitura: a IA nunca altera seus dados</span>
+        </div>
 
-          <div class="tras__cena" role="tabpanel" id="painel-estoque" aria-labelledby="tab-estoque">
-            <ol class="etapas">
-              <li><b>Pergunta entendida</b><span>Produtos com estoque abaixo do mínimo cadastrado.</span></li>
-              <li><b>Consulta conferida</b><span>Uma leitura da tabela de produtos, nenhuma alteração.</span><code>SELECT nome, estoque_atual, estoque_minimo FROM produtos WHERE estoque_atual &lt; estoque_minimo</code></li>
-              <li><b>Dados usados</b>
-                <table class="dados"><thead><tr><th>Produto</th><th>Atual</th><th>Mínimo</th></tr></thead><tbody>
-                  <tr><td>Café Torrado e Moído 500g</td><td>6 un</td><td>15 un</td></tr>
-                  <tr><td>Linguiça Toscana Frescal</td><td>4,2 kg</td><td>10 kg</td></tr>
-                  <tr><td>Feijão Carioca 1kg</td><td>10 un</td><td>20 un</td></tr>
-                  <tr><td>Cerveja Pilsen Lata 350ml</td><td>18 un</td><td>36 un</td></tr>
-                  <tr><td>Bolo de Cenoura com Cobertura</td><td>3 un</td><td>6 un</td></tr>
-                </tbody></table>
-              </li>
-            </ol>
-          </div>
-
-          <div class="tras__cena" role="tabpanel" id="painel-faturamento" aria-labelledby="tab-faturamento" hidden>
-            <ol class="etapas">
-              <li><b>Pergunta entendida</b><span>Soma das vendas dos últimos 30 dias.</span></li>
-              <li><b>Consulta conferida</b><span>Uma leitura da tabela de vendas, nenhuma alteração.</span><code>SELECT COUNT(*), SUM(valor_total) FROM vendas WHERE data_hora &gt;= date('now', '-30 days')</code></li>
-              <li><b>Dados usados</b>
-                <table class="dados"><thead><tr><th>Vendas</th><th>Faturamento</th><th>Lucro bruto</th></tr></thead><tbody>
-                  <tr><td>80</td><td>R$ 9.599,98</td><td>R$ 3.669,78</td></tr>
-                </tbody></table>
-              </li>
-            </ol>
-          </div>
-
-          <div class="tras__cena" role="tabpanel" id="painel-vendidos" aria-labelledby="tab-vendidos" hidden>
-            <ol class="etapas">
-              <li><b>Pergunta entendida</b><span>Produtos que mais faturaram nos últimos 30 dias.</span></li>
-              <li><b>Consulta conferida</b><span>Uma leitura de produtos e itens vendidos, nenhuma alteração.</span><code>SELECT p.nome, SUM(iv.subtotal) FROM itens_venda iv JOIN produtos p ON p.id = iv.produto_id GROUP BY p.nome ORDER BY 2 DESC</code></li>
-              <li><b>Dados usados</b>
-                <table class="dados"><thead><tr><th>Produto</th><th>Faturamento</th></tr></thead><tbody>
-                  <tr><td>Arroz Tipo 1 5kg</td><td>R$ 1.345,00</td></tr>
-                  <tr><td>Café Torrado e Moído 500g</td><td>R$ 1.014,90</td></tr>
-                  <tr><td>Patinho Bovino Resfriado</td><td>R$ 802,98</td></tr>
-                  <tr><td>Sabão em Pó 1,6kg</td><td>R$ 799,09</td></tr>
-                  <tr><td>Suco de Laranja Integral 1L</td><td>R$ 642,60</td></tr>
-                </tbody></table>
-              </li>
-            </ol>
-          </div>
-
-          <div class="tras__cena" role="tabpanel" id="painel-pagamentos" aria-labelledby="tab-pagamentos" hidden>
-            <ol class="etapas">
-              <li><b>Pergunta entendida</b><span>Faturamento agrupado por forma de pagamento.</span></li>
-              <li><b>Consulta conferida</b><span>Uma leitura da tabela de vendas, nenhuma alteração.</span><code>SELECT forma_pagamento, SUM(valor_total) FROM vendas GROUP BY forma_pagamento ORDER BY 2 DESC</code></li>
-              <li><b>Dados usados</b>
-                <table class="dados"><thead><tr><th>Pagamento</th><th>Faturamento</th></tr></thead><tbody>
-                  <tr><td>PIX</td><td>R$ 2.911,45</td></tr>
-                  <tr><td>Dinheiro</td><td>R$ 2.050,02</td></tr>
-                  <tr><td>Vale Alimentação</td><td>R$ 1.910,51</td></tr>
-                  <tr><td>Cartão de Crédito</td><td>R$ 1.553,40</td></tr>
-                  <tr><td>Cartão de Débito</td><td>R$ 1.174,60</td></tr>
-                </tbody></table>
-              </li>
-            </ol>
-          </div>
-
-          <!-- modo ao vivo: js/demo.js escreve aqui a consulta (campo "sql") e a tabela (campo "dados") da API -->
-          <div class="tras__cena" id="painel-ao-vivo" hidden>
-            <ol class="etapas">
-              <li><b>Consulta conferida</b><span>Gerada pela IA e conferida pelo sistema antes de rodar.</span><code id="painel-ao-vivo-sql"></code></li>
-              <li><b>Dados usados</b><div class="painel__live" id="painel-ao-vivo-dados"></div></li>
-            </ol>
+        <div class="ui ui-app app">
+          <div class="app__pane app__pane--list wa" aria-label="Conversa com a Gerencia AI no WhatsApp">
+            <div class="wa__head"><span class="wa-av">G</span><span class="wa__who"><b>Gerencia AI</b><span>online</span></span><img class="wa__logo" src="assets/icons/whatsapp.svg" alt="WhatsApp" width="24" height="24"></div>
+            <div class="wa__body" id="wa-body" aria-live="polite">
+              <div class="wa__day">Hoje</div>
+              <div class="wa-msg wa-msg--me">O que está com estoque baixo?<small>07:41</small></div>
+              <div class="wa-msg wa-msg--bot">5 produtos estão abaixo do mínimo:<br>• <b>Café Torrado e Moído 500g</b>: 6 un (mínimo 15)<br>• <b>Linguiça Toscana Frescal</b>: 4,2 kg (mínimo 10)<br>• <b>Feijão Carioca 1kg</b>: 10 un (mínimo 20)<br>• <b>Cerveja Pilsen Lata 350ml</b>: 18 un (mínimo 36)<br>• <b>Bolo de Cenoura com Cobertura</b>: 3 un (mínimo 6)<small>07:41</small></div>
+            </div>
+            <form class="wa__input" id="wa-form" autocomplete="off" hidden>
+              <label class="wa__label" for="wa-pergunta">Sua pergunta para a API local</label>
+              <input id="wa-pergunta" name="pergunta" type="text">
+              <button class="wa__send" type="submit" aria-label="Enviar pergunta"><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M2.5 8h10M8.5 3.5 13 8l-4.5 4.5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+            </form>
           </div>
         </div>
+        <p class="nota">Demonstração com o banco de um mercado de teste: 20 produtos e 80 vendas em 30 dias.</p>
       </div>
-      <p class="nota">Demonstração com o banco de um mercado de teste: 20 produtos e 80 vendas em 30 dias.</p>
     </div>
   </section>
 
@@ -311,7 +246,7 @@
       <div class="secao__cabeca">
         <p class="rotulo">Perguntas</p>
         <h2 id="perguntas-h">O que dá para perguntar à Gerencia AI</h2>
-        <p class="secao__lead">Escreva do seu jeito, como falaria com o gerente. Alguns exemplos que ela já responde com os dados do sistema:</p>
+        <p class="secao__lead">Estes são só alguns exemplos. Você pergunta do seu jeito, como falaria com o gerente.</p>
       </div>
       <div class="temas">
         <article class="tema"><h3>Vendas</h3><ul><li>Quanto vendi ontem?</li><li>Qual foi o melhor dia do mês?</li><li>Quanto é o ticket médio?</li></ul></article>
@@ -320,6 +255,18 @@
         <article class="tema"><h3>Pagamentos</h3><ul><li>Como os clientes estão pagando?</li><li>Quanto entrou no PIX esta semana?</li><li>Quanto foi no vale alimentação?</li></ul></article>
         <article class="tema"><h3>Produtos</h3><ul><li>Quais os 5 mais vendidos?</li><li>O que vende menos no açougue?</li><li>Quanto vendi de bebidas?</li></ul></article>
         <article class="tema"><h3>Horários</h3><ul><li>Qual horário vende mais?</li><li>Que dia da semana é mais fraco?</li><li>Quantas vendas teve no sábado?</li></ul></article>
+      </div>
+      <div class="faixa-pergunta" id="faixa-pergunta">
+        <div class="faixa-pergunta__texto">
+          <h3>E qualquer outra pergunta sobre a sua loja</h3>
+          <p class="sr-only">Exemplos: Quanto vendi de leite hoje? Qual fornecedor eu mais comprei no mês? O que vendeu menos que na semana passada? Quanto lucrei com a padaria em novembro?</p>
+        </div>
+        <div class="wa-barra-digitar" aria-hidden="true">
+          <div class="wa-barra-digitar__campo">
+            <span class="wa-barra-digitar__texto" id="pergunta-digitada">Quanto vendi de leite hoje?</span><span class="wa-barra-digitar__cursor"></span>
+          </div>
+          <span class="wa-barra-digitar__enviar"><svg viewBox="0 0 16 16" width="16" height="16"><path d="M2.5 8h10M8.5 3.5 13 8l-4.5 4.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+        </div>
       </div>
     </div>
   </section>
@@ -402,7 +349,8 @@
 <script type="module" src="assets/system.js"></script>
 <script type="module" src="assets/motion/motion.js"></script>
 <script src="js/dados-demo.js"></script>
-<script type="module" src="js/demo.js"></script>
-<script type="module" src="js/filme.js?v=6"></script>
+<script type="module" src="js/demo.js?v=7"></script>
+<script type="module" src="js/animacoes.js?v=7"></script>
+<script type="module" src="js/filme.js?v=7"></script>
 </body>
 </html>

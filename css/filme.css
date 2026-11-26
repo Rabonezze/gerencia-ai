@@ -221,6 +221,8 @@
 
 .recusa--ativa .recusa__msgs .wa-typing { animation: filme-subir-suave .3s cubic-bezier(.22, 1, .36, 1) both; }
 .recusa--pausada *, .recusa--pausada *::before, .recusa--pausada *::after { animation-play-state: paused !important; }
+.recusa--ativa .recusa__msgs > * { transition: opacity .45s cubic-bezier(.4, 0, .2, 1); }
+.recusa--ativa .recusa__msgs--saindo > * { opacity: 0 !important; }
 
 @keyframes recusa-bloqueio-entrar {
   from { opacity: 0; transform: scale(.85); }
