@@ -4,6 +4,15 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Gerencia AI: gestão do supermercado pelo WhatsApp</title>
+<script>
+// Sempre abrir no topo: o navegador não volta para onde a página estava e o
+// marcador de seção (#demo, #contato...) sai do endereço ao carregar.
+(function () {
+  if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+  if (location.hash) history.replaceState(null, '', location.pathname + location.search);
+  window.addEventListener('pageshow', function () { window.scrollTo(0, 0); });
+})();
+</script>
 <meta name="description" content="Pergunte pelo WhatsApp quanto vendeu, o que está acabando ou o que dá mais lucro. A Gerencia AI responde com os números reais da loja e nunca altera nada.">
 <meta property="og:type" content="website">
 <meta property="og:title" content="Gerencia AI: gestão do supermercado pelo WhatsApp">
