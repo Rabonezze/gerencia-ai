@@ -313,7 +313,7 @@ main > section.secao > .wrap:is(.faq-grade, .contato),
   /* 1b. #problema: Hoje vem da esquerda, Com a Gerencia AI vem da direita */
   html.js-anima .comparar__lado--hoje,
   html.js-anima .comparar__lado--gerencia {
-    transition: opacity .65s var(--curva-entrada), transform .65s var(--curva-entrada);
+    transition: opacity 1s var(--curva-entrada), transform 1s var(--curva-entrada);
   }
   html.js-anima .comparar__lado--hoje:not(.is-visivel) {
     opacity: 0; transform: translateX(-80px);
@@ -326,17 +326,17 @@ main > section.secao > .wrap:is(.faq-grade, .contato),
     html.js-anima .comparar__lado--gerencia:not(.is-visivel) { transform: translateX(40px); }
   }
   html.js-anima .planilha__linha {
-    transition: opacity .48s var(--curva-entrada) calc(180ms + var(--i, 0) * 70ms),
-                transform .48s var(--curva-entrada) calc(180ms + var(--i, 0) * 70ms);
+    transition: opacity .85s var(--curva-entrada) calc(350ms + var(--i, 0) * 120ms),
+                transform .85s var(--curva-entrada) calc(350ms + var(--i, 0) * 120ms);
   }
   html.js-anima .comparar__lado--hoje:not(.is-visivel) .planilha__linha {
     opacity: 0; transform: translateY(8px);
   }
   html.js-anima .mini-chat .wa-msg--me {
-    transition: opacity .48s var(--curva-entrada) 200ms, transform .48s var(--curva-entrada) 200ms;
+    transition: opacity .85s var(--curva-entrada) 300ms, transform .85s var(--curva-entrada) 300ms;
   }
   html.js-anima .mini-chat .wa-msg--bot {
-    transition: opacity .48s var(--curva-entrada) 600ms, transform .48s var(--curva-entrada) 600ms;
+    transition: opacity .85s var(--curva-entrada) 1000ms, transform .85s var(--curva-entrada) 1000ms;
   }
   html.js-anima .comparar__lado--gerencia:not(.is-visivel) .mini-chat .wa-msg {
     opacity: 0; transform: translateY(10px);
@@ -344,23 +344,23 @@ main > section.secao > .wrap:is(.faq-grade, .contato),
 
   /* 1c. #seguranca: blocos .camada sobem ~16px; caminho .fluxo acende em sequência */
   html.js-anima .camada {
-    transition: opacity .55s var(--curva-entrada) var(--atraso, 0ms),
-                transform .55s var(--curva-entrada) var(--atraso, 0ms),
+    transition: opacity .9s var(--curva-entrada) var(--atraso, 0ms),
+                transform .9s var(--curva-entrada) var(--atraso, 0ms),
                 border-color .25s ease, background .25s ease;
   }
   html.js-anima .camada:not(.is-visivel) {
     opacity: 0; transform: translateY(16px);
   }
   html.js-anima .fluxo__passo {
-    transition: opacity .48s var(--curva-entrada) calc(var(--i, 0) * 85ms),
-                transform .48s var(--curva-entrada) calc(var(--i, 0) * 85ms);
+    transition: opacity .85s var(--curva-entrada) calc(var(--i, 0) * 160ms),
+                transform .85s var(--curva-entrada) calc(var(--i, 0) * 160ms);
   }
   html.js-anima .fluxo:not(.is-visivel) .fluxo__passo {
     opacity: .16; transform: scale(.96);
   }
   html.js-anima .fluxo__seta {
-    transition: opacity .45s var(--curva-entrada) calc(var(--i, 0) * 85ms),
-                transform .45s var(--curva-entrada) calc(var(--i, 0) * 85ms);
+    transition: opacity .8s var(--curva-entrada) calc(var(--i, 0) * 160ms),
+                transform .8s var(--curva-entrada) calc(var(--i, 0) * 160ms);
   }
   html.js-anima .fluxo:not(.is-visivel) .fluxo__seta {
     opacity: 0; transform: scaleX(0);
@@ -373,22 +373,22 @@ main > section.secao > .wrap:is(.faq-grade, .contato),
 
   /* 1d. #perguntas: cartões .tema entram com fade + scale 0.96 -> 1, perguntas internas em cascata */
   html.js-anima .tema {
-    transition: opacity .52s var(--curva-entrada) var(--atraso, 0ms),
-                transform .52s var(--curva-entrada) var(--atraso, 0ms),
+    transition: opacity .9s var(--curva-entrada) var(--atraso, 0ms),
+                transform .9s var(--curva-entrada) var(--atraso, 0ms),
                 box-shadow .25s ease;
   }
   html.js-anima .tema:not(.is-visivel) {
     opacity: 0; transform: scale(.96);
   }
   html.js-anima .tema li {
-    transition: opacity .45s var(--curva-entrada) calc(var(--atraso, 0ms) + 140ms + var(--li-i, 0) * 65ms),
-                transform .45s var(--curva-entrada) calc(var(--atraso, 0ms) + 140ms + var(--li-i, 0) * 65ms);
+    transition: opacity .8s var(--curva-entrada) calc(var(--atraso, 0ms) + 260ms + var(--li-i, 0) * 110ms),
+                transform .8s var(--curva-entrada) calc(var(--atraso, 0ms) + 260ms + var(--li-i, 0) * 110ms);
   }
   html.js-anima .tema:not(.is-visivel) li {
     opacity: 0; transform: translateY(8px);
   }
   html.js-anima .faixa-pergunta {
-    transition: opacity .55s var(--curva-entrada), transform .55s var(--curva-entrada);
+    transition: opacity .9s var(--curva-entrada), transform .9s var(--curva-entrada);
   }
   html.js-anima .faixa-pergunta:not(.is-visivel) {
     opacity: 0; transform: translateY(14px);
@@ -396,8 +396,8 @@ main > section.secao > .wrap:is(.faq-grade, .contato),
 
   /* 1e. #faq: cada bloco desliza de baixo (~20px) com fade */
   html.js-anima .faq > .faq__item {
-    transition: opacity .55s var(--curva-entrada) var(--atraso, 0ms),
-                transform .55s var(--curva-entrada) var(--atraso, 0ms);
+    transition: opacity .9s var(--curva-entrada) var(--atraso, 0ms),
+                transform .9s var(--curva-entrada) var(--atraso, 0ms);
   }
   html.js-anima .faq > .faq__item:not(.is-visivel) {
     opacity: 0; transform: translateY(20px);
@@ -406,7 +406,7 @@ main > section.secao > .wrap:is(.faq-grade, .contato),
   /* 1f. #contato e rodapé: só um fade simples */
   html.js-anima #contato .wrap,
   html.js-anima .rodape .wrap {
-    transition: opacity .65s var(--curva-entrada);
+    transition: opacity 1s var(--curva-entrada);
   }
   html.js-anima #contato .wrap:not(.is-visivel),
   html.js-anima .rodape .wrap:not(.is-visivel) {

@@ -114,7 +114,8 @@ function iniciarAnimacoes() {
 
   const conjuntosEntrada = new Set(alvosEntrada);
 
-  // Único IntersectionObserver para todas as animações de entrada + visibilidade da faixa
+  // Único IntersectionObserver: o bloco só anima quando já passou da beirada de baixo
+  // (entrou uns 20% para dentro da tela).
   const observer = new IntersectionObserver(
     (entries) => {
       let ordemLote = 0;
@@ -126,23 +127,37 @@ function iniciarAnimacoes() {
           atualizarEstadoDigitacao();
         }
 
-        if (entry.isIntersecting && conjuntosEntrada.has(alvo)) {
-          conjuntosEntrada.delete(alvo);
+        if (!conjuntosEntrada.has(alvo)) return;
+
+        if (entry.isIntersecting) {
           if (alvo.matches('.camada, .tema, .faq__item')) {
-            alvo.style.setProperty('--atraso', `${ordemLote * 75}ms`);
+            alvo.style.setProperty('--atraso', `${ordemLote * 140}ms`);
             ordemLote += 1;
           }
           alvo.classList.add('is-visivel');
-          if (alvo !== faixaPergunta) {
-            observer.unobserve(alvo);
-          }
         }
       });
     },
-    { threshold: 0.2 }
+    { threshold: 0, rootMargin: '0px 0px -20% 0px' }
   );
 
-  alvosEntrada.forEach((el) => observer.observe(el));
+  // Segundo observador, sem margem: só rearma quando o bloco saiu por inteiro pela
+  // beirada de baixo, para a pessoa nunca ver o bloco sumindo.
+  const rearmar = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting && entry.boundingClientRect.top > 0) {
+          entry.target.classList.remove('is-visivel');
+        }
+      });
+    },
+    { threshold: 0 }
+  );
+
+  alvosEntrada.forEach((el) => {
+    observer.observe(el);
+    rearmar.observe(el);
+  });
   if (faixaPergunta && !alvosEntrada.includes(faixaPergunta)) {
     observer.observe(faixaPergunta);
   }
